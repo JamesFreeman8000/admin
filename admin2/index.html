@@ -1,1 +1,1853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exterior Wash LLC — Command Center</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f6f8fb;
+  --surface:#ffffff;
+  --surface-2:#fbfcfe;
+  --border:#e6eaf0;
+  --border-strong:#d4dae4;
+  --text:#1a2233;
+  --text-2:#5b6577;
+  --text-3:#8b95a7;
+  --brand:#0a66cf;
+  --brand-soft:#e8f1fd;
+  --brand-2:#0846a0;
+  --green:#12a150;
+  --green-soft:#e6f6ec;
+  --amber:#d98a00;
+  --amber-soft:#fdf3e0;
+  --red:#e0463c;
+  --red-soft:#fdecea;
+  --purple:#7c5cff;
+  --purple-soft:#efeaff;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06);
+  --shadow-md:0 4px 12px rgba(16,24,40,.08);
+  --shadow-lg:0 12px 40px rgba(16,24,40,.16);
+  --radius:14px;
+  --radius-sm:10px;
+  --sidebar-w:248px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--text)}
+a{color:var(--brand);text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#d4dae4;border-radius:20px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#b9c1cf}
 
+/* ---------- Layout ---------- */
+.app{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:40;transition:transform .25s ease}
+.brand{display:flex;align-items:center;gap:11px;padding:20px 20px 16px}
+.brand-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--brand),#3d8bff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0;box-shadow:0 4px 10px rgba(10,102,207,.3)}
+.brand-name{font-weight:700;font-size:15px;letter-spacing:-.2px;line-height:1.1}
+.brand-sub{font-size:11px;color:var(--text-3);font-weight:500}
+.nav{flex:1;overflow-y:auto;padding:6px 12px 12px}
+.nav-section{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);padding:14px 12px 6px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;color:var(--text-2);font-weight:500;font-size:13.5px;width:100%;text-align:left;transition:all .12s;margin-bottom:1px;position:relative}
+.nav-item:hover{background:var(--surface-2);color:var(--text)}
+.nav-item.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.nav-item .ico{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.nav-item .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;min-width:18px;text-align:center}
+.nav-item.active .badge{background:var(--brand)}
+.sync-box{margin:8px 12px 12px;padding:11px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;font-size:12px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text-3);display:inline-block;margin-right:6px}
+.sync-dot.on{background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+.sync-dot.off{background:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+.sync-dot.err{background:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+
+.main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-width:0}
+.topbar{height:64px;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 28px;position:sticky;top:0;z-index:30}
+.topbar h1{font-size:19px;font-weight:700;letter-spacing:-.3px}
+.topbar .sub{font-size:12.5px;color:var(--text-3);font-weight:500;margin-top:1px}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.hamburger{display:none}
+.search-mini{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:7px 12px;width:230px;color:var(--text-3)}
+.search-mini input{border:none;background:none;outline:none;width:100%;font-size:13px}
+.content{flex:1;padding:26px 28px 60px;max-width:1400px;width:100%}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:9px;font-weight:600;font-size:13.5px;transition:all .13s;border:1px solid transparent;white-space:nowrap}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--brand);color:#fff;box-shadow:0 1px 2px rgba(10,102,207,.3)}
+.btn-primary:hover{background:var(--brand-2)}
+.btn-ghost{background:var(--surface);color:var(--text-2);border-color:var(--border-strong)}
+.btn-ghost:hover{background:var(--surface-2);color:var(--text)}
+.btn-soft{background:var(--brand-soft);color:var(--brand)}
+.btn-soft:hover{background:#dbe9fc}
+.btn-danger{background:var(--red-soft);color:var(--red)}
+.btn-danger:hover{background:#fbdad7}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+.btn-icon{padding:8px;border-radius:8px;color:var(--text-3)}
+.btn-icon:hover{background:var(--surface-2);color:var(--text)}
+
+/* ---------- Cards ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-pad{padding:20px}
+.card-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.card-head h3{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.card-head .sub{font-size:12.5px;color:var(--text-3)}
+
+.grid{display:grid;gap:16px}
+.kpi-grid{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi .ki{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.kpi .kl{font-size:12.5px;color:var(--text-2);font-weight:600}
+.kpi .kv{font-size:27px;font-weight:800;letter-spacing:-.8px;margin-top:3px}
+.kpi .kd{font-size:12px;font-weight:600;margin-top:6px;display:flex;align-items:center;gap:4px}
+.kd.up{color:var(--green)}.kd.down{color:var(--red)}.kd.flat{color:var(--text-3)}
+
+/* ---------- Tables ---------- */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3);padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface-2)}
+td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr{transition:background .1s}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:none}
+.row-click{cursor:pointer}
+
+/* ---------- Chips / badges ---------- */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:.2px}
+.chip .d{width:6px;height:6px;border-radius:50%}
+.chip-green{background:var(--green-soft);color:#0d7a3c}
+.chip-amber{background:var(--amber-soft);color:#a86800}
+.chip-red{background:var(--red-soft);color:#c0362d}
+.chip-blue{background:var(--brand-soft);color:var(--brand-2)}
+.chip-purple{background:var(--purple-soft);color:#5b3fd4}
+.chip-gray{background:#eef1f5;color:var(--text-2)}
+
+/* ---------- Forms ---------- */
+.field{margin-bottom:15px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:6px}
+.field .hint{font-weight:400;color:var(--text-3);font-size:11.5px}
+.input,select.input,textarea.input{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface);transition:all .12s;outline:none}
+.input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+textarea.input{resize:vertical;min-height:80px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ---------- Modal ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(16,24,40,.5);backdrop-filter:blur(3px);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .18s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border-radius:16px;box-shadow:var(--shadow-lg);width:100%;max-width:640px;transform:translateY(12px) scale(.98);transition:transform .2s;margin:auto 0}
+.modal-overlay.open .modal{transform:none}
+.modal.wide{max-width:900px}
+.modal-head{display:flex;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border)}
+.modal-head h2{font-size:17px;font-weight:700}
+.modal-head .sub{font-size:12.5px;color:var(--text-3);margin-top:1px}
+.modal-body{padding:22px 24px;max-height:65vh;overflow-y:auto}
+.modal-foot{display:flex;align-items:center;gap:10px;padding:16px 24px;border-top:1px solid var(--border);background:var(--surface-2);border-radius:0 0 16px 16px}
+
+/* ---------- Misc ---------- */
+.page-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.page-head .ph-actions{margin-left:auto;display:flex;gap:9px;flex-wrap:wrap}
+.section-title{font-size:15px;font-weight:700;margin-bottom:14px;letter-spacing:-.2px}
+.empty{text-align:center;padding:48px 20px;color:var(--text-3)}
+.empty .ei{font-size:40px;margin-bottom:12px;opacity:.5}
+.empty h4{font-size:15px;color:var(--text-2);margin-bottom:5px}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.pill-tabs{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px}
+.pill-tabs button{padding:6px 14px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--text-2)}
+.pill-tabs button.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.select-mini{padding:7px 11px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);font-weight:600;font-size:13px;outline:none}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--brand-soft);color:var(--brand-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.stat-inline{display:flex;gap:26px;flex-wrap:wrap}
+.stat-inline .si-l{font-size:12px;color:var(--text-3);font-weight:600}
+.stat-inline .si-v{font-size:19px;font-weight:800;letter-spacing:-.4px;margin-top:2px}
+.divider{height:1px;background:var(--border);margin:18px 0}
+.mono{font-variant-numeric:tabular-nums}
+
+/* Toast */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--text);color:#fff;padding:12px 18px;border-radius:10px;font-size:13.5px;font-weight:500;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;animation:toastIn .25s;max-width:360px}
+.toast.ok{background:#0d7a3c}.toast.err{background:#c0362d}.toast.info{background:var(--text)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+/* Photo compare */
+.photo-compare{position:relative;border-radius:12px;overflow:hidden;user-select:none;background:#eef1f5;aspect-ratio:4/3}
+.photo-compare img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo-compare .after-wrap{position:absolute;inset:0;overflow:hidden;width:50%}
+.photo-compare .slider-line{position:absolute;top:0;bottom:0;width:3px;background:#fff;left:50%;transform:translateX(-50%);box-shadow:0 0 0 1px rgba(0,0,0,.1);cursor:ew-resize;z-index:3}
+.photo-compare .slider-handle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:#fff;box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:center;cursor:ew-resize;z-index:4;color:var(--brand)}
+.photo-compare .lbl{position:absolute;bottom:10px;padding:3px 10px;border-radius:20px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:700;z-index:2}
+.photo-compare .lbl.b{left:10px}.photo-compare .lbl.a{right:10px}
+
+/* Calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.cal-dow{background:var(--surface-2);padding:9px;text-align:center;font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px}
+.cal-cell{background:var(--surface);min-height:104px;padding:7px 8px;position:relative;transition:background .1s;cursor:pointer}
+.cal-cell:hover{background:var(--surface-2)}
+.cal-cell.other{background:var(--surface-2);opacity:.55}
+.cal-cell.today .cal-num{background:var(--brand);color:#fff}
+.cal-num{font-size:12.5px;font-weight:600;color:var(--text-2);width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:7px;margin-bottom:4px}
+.cal-ev{font-size:11px;font-weight:600;padding:3px 7px;border-radius:6px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+
+.progress{height:7px;background:var(--surface-2);border-radius:20px;overflow:hidden;border:1px solid var(--border)}
+.progress .bar{height:100%;border-radius:20px}
+
+.price-card{border:1px solid var(--border);border-radius:12px;padding:0;overflow:hidden;transition:all .15s;background:var(--surface)}
+.price-card:hover{box-shadow:var(--shadow-md);border-color:var(--border-strong)}
+.price-head{padding:15px 17px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border)}
+.price-emoji{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.price-body{padding:15px 17px}
+.price-rate{font-size:24px;font-weight:800;letter-spacing:-.6px}
+.price-unit{font-size:13px;color:var(--text-3);font-weight:600}
+.price-min{font-size:12px;color:var(--text-2);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}
+
+.calc-out{background:var(--brand-soft);border:1px solid #cfe0fa;border-radius:12px;padding:18px;text-align:center}
+.calc-out .co-l{font-size:12px;color:var(--brand-2);font-weight:600}
+.calc-out .co-v{font-size:32px;font-weight:800;color:var(--brand-2);letter-spacing:-1px}
+
+.line-item{display:grid;grid-template-columns:1fr 90px 110px 120px 36px;gap:10px;align-items:center;margin-bottom:9px}
+.line-item .input{padding:8px 10px}
+
+.doc-preview{background:#fff;border:1px solid var(--border);border-radius:12px;padding:34px;font-size:13px;box-shadow:var(--shadow)}
+.doc-preview .dp-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px}
+.doc-preview table{margin:18px 0}
+.doc-preview .dp-total{margin-left:auto;width:260px}
+.doc-total-row{display:flex;justify-content:space-between;padding:6px 0}
+.doc-total-row.grand{border-top:2px solid var(--text);margin-top:6px;padding-top:10px;font-size:17px;font-weight:800}
+
+.setup-banner{background:linear-gradient(100deg,#fff8e8,#fef3d9);border:1px solid #f5d98a;border-radius:12px;padding:15px 18px;display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.setup-banner .sb-ico{font-size:22px}
+
+/* Responsive */
+@media(max-width:1000px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:none;box-shadow:var(--shadow-lg)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .search-mini{display:none}
+  .field-row,.field-row-3{grid-template-columns:1fr}
+  .line-item{grid-template-columns:1fr;gap:6px;padding-bottom:12px;border-bottom:1px dashed var(--border);margin-bottom:12px}
+  .content{padding:20px 16px 60px}
+  .topbar{padding:0 16px}
+}
+.nav-backdrop{display:none;position:fixed;inset:0;background:rgba(16,24,40,.4);z-index:39}
+.nav-backdrop.open{display:block}
+[hidden]{display:none!important}
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+</style>
+</head>
+<body>
+<!-- LOCK SCREEN -->
+<div id="lockScreen" hidden style="position:fixed;inset:0;z-index:500;background:linear-gradient(135deg,#0a66cf,#0846a0);display:flex;align-items:center;justify-content:center;padding:20px">
+  <form id="lockBox" onsubmit="return tryUnlock(event)" style="background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:34px 32px;width:100%;max-width:360px;text-align:center">
+    <div style="width:58px;height:58px;border-radius:15px;background:linear-gradient(135deg,#0a66cf,#3d8bff);display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px">💧</div>
+    <div style="font-size:19px;font-weight:800;letter-spacing:-.3px" id="lockTitle">Command Center</div>
+    <div style="font-size:13px;color:#8b95a7;margin-top:3px;margin-bottom:22px">Enter your password to continue</div>
+    <input id="lockPass" type="password" placeholder="Password" autocomplete="current-password"
+      style="width:100%;padding:12px 14px;border:1px solid #d4dae4;border-radius:10px;font-size:15px;outline:none;text-align:center" onfocus="this.style.borderColor='#0a66cf'">
+    <div id="lockErr" hidden style="color:#e0463c;font-size:12.5px;font-weight:600;margin-top:10px">Incorrect password</div>
+    <button type="submit" style="width:100%;margin-top:16px;padding:12px;background:#0a66cf;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer">Unlock</button>
+  </form>
+</div>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">💧</div>
+      <div>
+        <div class="brand-name" id="bizName">Exterior Wash</div>
+        <div class="brand-sub">Command Center</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sync-box">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span><span class="sync-dot off" id="syncDot"></span><span id="syncText" style="font-weight:600">Local mode</span></span>
+        <button class="btn-icon" onclick="openSettings()" title="Settings" style="padding:4px">⚙️</button>
+      </div>
+      <div id="syncSub" style="color:var(--text-3);margin-top:5px;font-size:11px">Data saved in this browser</div>
+    </div>
+  </aside>
+  <div class="nav-backdrop" id="navBackdrop" onclick="toggleNav(false)"></div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger btn-icon" onclick="toggleNav(true)" style="font-size:20px">☰</button>
+      <div>
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="sub" id="pageSub"></div>
+      </div>
+      <div class="topbar-actions">
+        <div class="search-mini">
+          <span>🔍</span><input id="globalSearch" placeholder="Search jobs, customers…" oninput="globalSearchHandler(this.value)">
+        </div>
+        <button class="btn btn-primary" onclick="quickAdd()"><span style="font-size:16px;line-height:1">＋</span> New Job</button>
+      </div>
+    </header>
+    <main class="content" id="view"></main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalBox"></div>
+</div>
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+/* =====================================================================
+   EXTERIOR WASH LLC — COMMAND CENTER
+   Single-file dashboard. Data layer: localStorage + optional Google
+   Sheets sync via Google Apps Script Web App.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   1. STATE + PERSISTENCE
+   ------------------------------------------------------------------- */
+const LS_KEY = 'ewash_data_v1';
+const CFG_KEY = 'ewash_cfg_v1';
+
+const DEFAULT_CFG = {
+  bizName: 'Exterior Wash LLC',
+  ownerName: '',
+  email: 'exteriorwashllc@gmail.com',
+  phone: '',
+  address: '',
+  website: '',
+  taxRate: 0,
+  currency: '$',
+  apiUrl: '',       // Google Apps Script web app URL
+  apiSecret: '',    // shared secret token
+  autosync: true,
+  passHash: ''      // sha-256 of the login password ('' = no lock)
+};
+const SESSION_KEY = 'ewash_unlocked_v1';
+
+let CFG, DB;            // assigned in init() to avoid TDZ with helper consts
+let syncState = 'off';  // off | ok | syncing | err
+let ROUTE = 'dashboard';
+
+function loadCfg(){
+  try{ const c = JSON.parse(localStorage.getItem(CFG_KEY)); return {...DEFAULT_CFG, ...(c||{})}; }
+  catch(e){ return {...DEFAULT_CFG}; }
+}
+function saveCfg(){ try{ localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); }catch(e){} }
+
+function blankDB(){
+  return {
+    jobs:[], customers:[], quotes:[], invoices:[], services:[], expenses:[],
+    meta:{ createdAt:new Date().toISOString(), lastSync:null }
+  };
+}
+function loadDB(){
+  try{
+    const d = JSON.parse(localStorage.getItem(LS_KEY));
+    if(!d) return seedDB();
+    // ensure all arrays exist
+    const b = blankDB();
+    for(const k in b) if(d[k]===undefined) d[k]=b[k];
+    return d;
+  }catch(e){ return seedDB(); }
+}
+function saveDB(opts={}){
+  DB.meta = DB.meta || {};
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(DB)); }catch(e){ toast('Storage full — export a backup','err'); }
+  if(CFG.autosync && CFG.apiUrl && !opts.noSync) pushSync();
+}
+
+/* ---- ID + date helpers ---- */
+const uid = (p='id') => p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const todayISO = () => new Date().toISOString().slice(0,10);
+function fmtMoney(n){ n = Number(n)||0; return CFG.currency + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtMoney0(n){ n = Number(n)||0; return CFG.currency + Math.round(n).toLocaleString('en-US'); }
+function fmtDate(d){ if(!d) return '—'; const x=new Date(d+'T00:00:00'); return x.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function fmtDateShort(d){ if(!d) return '—'; const x=new Date(d+'T00:00:00'); return x.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function daysUntil(d){ if(!d) return null; const a=new Date(d+'T00:00:00'), b=new Date(todayISO()+'T00:00:00'); return Math.round((a-b)/864e5); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------------------------------------------------------------------
+   2. SEED DATA (demo, so the dashboard looks alive on first open)
+   ------------------------------------------------------------------- */
+function seedDB(){
+  const db = blankDB();
+  db.services = [
+    {id:uid('svc'), name:'House Soft Wash', emoji:'🏠', color:'blue', type:'sqft', rate:0.18, min:250, unit:'sq ft', notes:'Low-pressure soft wash for siding, vinyl, stucco. Uses SH mix.'},
+    {id:uid('svc'), name:'Roof Soft Wash', emoji:'🧼', color:'purple', type:'sqft', rate:0.35, min:400, unit:'sq ft', notes:'Kills algae/moss. Heavier SH ratio. Extra care on landscaping.'},
+    {id:uid('svc'), name:'Driveway / Concrete', emoji:'🛣️', color:'gray', type:'sqft', rate:0.22, min:120, unit:'sq ft', notes:'Surface cleaner + post-treatment. Price up for oil stains.'},
+    {id:uid('svc'), name:'Gutter Cleaning', emoji:'🪣', color:'green', type:'linear', rate:1.25, min:100, unit:'linear ft', notes:'Interior debris removal. 2-story +25%.'},
+    {id:uid('svc'), name:'Gutter Brightening', emoji:'✨', color:'amber', type:'linear', rate:1.75, min:125, unit:'linear ft', notes:'Removes tiger stripes / oxidation on gutter face.'},
+    {id:uid('svc'), name:'Deck / Fence Wash', emoji:'🪵', color:'amber', type:'sqft', rate:0.30, min:150, unit:'sq ft', notes:'Wood-safe pressure. Optional brightener add-on.'},
+    {id:uid('svc'), name:'Pressure Wash (Flat)', emoji:'💦', color:'blue', type:'flat', rate:175, min:0, unit:'job', notes:'General pressure washing — patios, walkways, small areas.'},
+    {id:uid('svc'), name:'Window Cleaning', emoji:'🪟', color:'blue', type:'flat', rate:8, min:80, unit:'per pane', notes:'Exterior only unless requested. $8/pane, $80 min.'}
+  ];
+  const svc = n => db.services.find(s=>s.name.includes(n)).name;
+
+  db.customers = [
+    {id:uid('cus'), name:'Robert Hayes', email:'rhayes@example.com', phone:'(704) 555-0142', address:'1420 Oakmont Dr, Charlotte, NC', notes:'Repeat customer — annual house wash', createdAt:'2025-03-11'},
+    {id:uid('cus'), name:'Maria Delgado', email:'maria.d@example.com', phone:'(704) 555-0198', address:'88 Birchwood Ln, Matthews, NC', notes:'Referred by Hayes', createdAt:'2025-06-02'},
+    {id:uid('cus'), name:'The Coffee Bar', email:'orders@thecoffeebar.co', phone:'(980) 555-0110', address:'220 Main St, Concord, NC', notes:'Commercial — monthly storefront', createdAt:'2025-01-20'},
+    {id:uid('cus'), name:'James Whitfield', email:'jwhit@example.com', phone:'(704) 555-0177', address:'55 Lakeview Ct, Huntersville, NC', notes:'', createdAt:'2025-07-15'}
+  ];
+  const C = db.customers;
+  const d = (off)=>{ const x=new Date(); x.setDate(x.getDate()+off); return x.toISOString().slice(0,10); };
+
+  db.jobs = [
+    {id:uid('job'), customerId:C[0].id, title:'Full House Soft Wash', services:[svc('House Soft')], date:d(-12), time:'09:00', status:'completed', address:C[0].address, price:520, cost:85, notes:'North + east siding heavy algae', beforePhotos:[], afterPhotos:[], createdAt:d(-20)},
+    {id:uid('job'), customerId:C[2].id, title:'Storefront Concrete + Windows', services:[svc('Driveway'),svc('Window')], date:d(-5), time:'07:00', status:'completed', address:C[2].address, price:340, cost:40, notes:'Early AM before open', beforePhotos:[], afterPhotos:[], createdAt:d(-14)},
+    {id:uid('job'), customerId:C[1].id, title:'Roof Wash + Gutters', services:[svc('Roof Soft'),svc('Gutter Cleaning')], date:d(1), time:'10:00', status:'scheduled', address:C[1].address, price:780, cost:120, notes:'2-story, watch the flower beds', beforePhotos:[], afterPhotos:[], createdAt:d(-3)},
+    {id:uid('job'), customerId:C[3].id, title:'Driveway + Deck', services:[svc('Driveway'),svc('Deck')], date:d(3), time:'13:00', status:'scheduled', address:C[3].address, price:450, cost:60, notes:'', beforePhotos:[], afterPhotos:[], createdAt:d(-2)},
+    {id:uid('job'), customerId:C[0].id, title:'Gutter Brightening', services:[svc('Gutter Bright')], date:d(6), time:'11:00', status:'scheduled', address:C[0].address, price:210, cost:20, notes:'Front elevation only', beforePhotos:[], afterPhotos:[], createdAt:d(-1)}
+  ];
+
+  db.quotes = [
+    {id:uid('qte'), number:'Q-1004', customerId:C[3].id, date:d(-2), validUntil:d(28), status:'sent', items:[
+      {desc:'House Soft Wash (~2,800 sq ft)', qty:1, price:504},
+      {desc:'Gutter Cleaning (180 linear ft)', qty:1, price:225}
+    ], notes:'Thanks for reaching out! Quote valid 30 days.', taxRate:0, token:uid('tok')},
+    {id:uid('qte'), number:'Q-1003', customerId:C[1].id, date:d(-9), validUntil:d(21), status:'accepted', items:[
+      {desc:'Roof Soft Wash', qty:1, price:560},
+      {desc:'Gutter Cleaning', qty:1, price:220}
+    ], notes:'', taxRate:0, token:uid('tok')}
+  ];
+
+  db.invoices = [
+    {id:uid('inv'), number:'INV-2087', customerId:C[0].id, jobId:db.jobs[0].id, date:d(-11), dueDate:d(4), status:'paid', paidDate:d(-9), items:[{desc:'Full House Soft Wash',qty:1,price:520}], notes:'Thank you!', taxRate:0},
+    {id:uid('inv'), number:'INV-2088', customerId:C[2].id, jobId:db.jobs[1].id, date:d(-4), dueDate:d(11), status:'sent', items:[{desc:'Storefront Concrete + Windows',qty:1,price:340}], notes:'Net 15', taxRate:0}
+  ];
+
+  db.expenses = [
+    {id:uid('exp'), date:d(-15), category:'Chemicals', desc:'SH / surfactant restock', amount:180},
+    {id:uid('exp'), date:d(-10), category:'Fuel', desc:'Truck + equipment', amount:95},
+    {id:uid('exp'), date:d(-6), category:'Equipment', desc:'Surface cleaner repair', amount:140}
+  ];
+  db.meta = {createdAt:new Date().toISOString(), lastSync:null, seeded:true};
+  return db;
+}
+
+/* ---------------------------------------------------------------------
+   3. LOOKUPS + DERIVED
+   ------------------------------------------------------------------- */
+const customer = id => DB.customers.find(c=>c.id===id);
+const custName = id => { const c=customer(id); return c?c.name:'—'; };
+const service = name => DB.services.find(s=>s.name===name);
+
+function docTotal(doc){
+  const sub = (doc.items||[]).reduce((s,i)=>s+(Number(i.qty)||0)*(Number(i.price)||0),0);
+  const tax = sub*((Number(doc.taxRate)||0)/100);
+  return {sub, tax, total:sub+tax};
+}
+function revenueStats(){
+  const paid = DB.invoices.filter(i=>i.status==='paid');
+  const outstanding = DB.invoices.filter(i=>i.status==='sent'||i.status==='overdue');
+  const totalPaid = paid.reduce((s,i)=>s+docTotal(i).total,0);
+  const totalOut = outstanding.reduce((s,i)=>s+docTotal(i).total,0);
+  const jobsRev = DB.jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+(Number(j.price)||0),0);
+  const expenses = DB.expenses.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const jobCosts = DB.jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+(Number(j.cost)||0),0);
+  return {totalPaid, totalOut, jobsRev, expenses, jobCosts, profit: jobsRev-expenses-jobCosts};
+}
+function monthlyRevenue(){
+  // last 6 months of completed job revenue
+  const now=new Date(); const out=[];
+  for(let i=5;i>=0;i--){
+    const dt=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const key=dt.toISOString().slice(0,7);
+    const label=dt.toLocaleDateString('en-US',{month:'short'});
+    const rev=DB.jobs.filter(j=>j.status==='completed'&&(j.date||'').slice(0,7)===key).reduce((s,j)=>s+(Number(j.price)||0),0);
+    const exp=DB.expenses.filter(e=>(e.date||'').slice(0,7)===key).reduce((s,e)=>s+(Number(e.amount)||0),0);
+    out.push({label,rev,exp});
+  }
+  return out;
+}
+
+/* ---------------------------------------------------------------------
+   4. GOOGLE SHEETS SYNC (via Apps Script Web App)
+   All requests go to CFG.apiUrl. We use text/plain POST bodies to avoid
+   CORS preflight (Apps Script friendly). Actions: pull, push, ping,
+   sendEmail, quoteLink.
+   ------------------------------------------------------------------- */
+function setSync(state, sub){
+  syncState = state;
+  const dot=document.getElementById('syncDot'), txt=document.getElementById('syncText'), sb=document.getElementById('syncSub');
+  if(!dot) return;
+  dot.className='sync-dot '+(state==='ok'?'on':state==='err'?'err':state==='syncing'?'off':'off');
+  const map={ok:'Google Sheets ✓',syncing:'Syncing…',err:'Sync error',off:CFG.apiUrl?'Connected':'Local mode'};
+  txt.textContent=map[state]||'Local mode';
+  if(sub!==undefined) sb.textContent=sub;
+  else sb.textContent = CFG.apiUrl ? (DB.meta.lastSync?('Last sync '+new Date(DB.meta.lastSync).toLocaleTimeString()):'Ready') : 'Data saved in this browser';
+}
+
+async function apiCall(action, payload={}){
+  if(!CFG.apiUrl) throw new Error('No API URL configured');
+  const body = JSON.stringify({action, secret:CFG.apiSecret, ...payload});
+  const res = await fetch(CFG.apiUrl, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body
+  });
+  const text = await res.text();
+  let json; try{ json=JSON.parse(text); }catch(e){ throw new Error('Bad response: '+text.slice(0,120)); }
+  if(json.error) throw new Error(json.error);
+  return json;
+}
+
+let pushTimer=null;
+function pushSync(){
+  // debounce
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(doPush, 1200);
+}
+async function doPush(){
+  if(!CFG.apiUrl) return;
+  setSync('syncing');
+  try{
+    // include business info in meta so the public quote page & owner
+    // notifications can use it
+    DB.meta = DB.meta || {};
+    DB.meta.bizName = CFG.bizName; DB.meta.ownerEmail = CFG.email;
+    DB.meta.phone = CFG.phone; DB.meta.currency = CFG.currency;
+    await apiCall('push', {data: DB});
+    DB.meta.lastSync=new Date().toISOString();
+    localStorage.setItem(LS_KEY, JSON.stringify(DB));
+    setSync('ok');
+  }catch(e){ setSync('err', e.message); }
+}
+async function pullSync(silent){
+  if(!CFG.apiUrl){ if(!silent) toast('Connect Google Sheets first in Settings','info'); return; }
+  setSync('syncing');
+  try{
+    const r = await apiCall('pull');
+    if(r.data && r.data.jobs){
+      DB = r.data;
+      const b=blankDB(); for(const k in b) if(DB[k]===undefined) DB[k]=b[k];
+      DB.meta=DB.meta||{}; DB.meta.lastSync=new Date().toISOString();
+      localStorage.setItem(LS_KEY, JSON.stringify(DB));
+      setSync('ok'); render();
+      if(!silent) toast('Pulled latest from Google Sheets','ok');
+    } else { setSync('ok'); if(!silent) toast('Sheet is empty — pushed your local data','info'); doPush(); }
+  }catch(e){ setSync('err', e.message); if(!silent) toast('Pull failed: '+e.message,'err'); }
+}
+async function testConnection(){
+  try{
+    const r=await apiCall('ping');
+    return r.ok===true;
+  }catch(e){ return false; }
+}
+
+/* ---------------------------------------------------------------------
+   5. NAV + ROUTER
+   ------------------------------------------------------------------- */
+const NAV = [
+  {section:'Overview'},
+  {id:'dashboard', label:'Dashboard', icon:'📊'},
+  {id:'schedule',  label:'Schedule',  icon:'📅'},
+  {id:'jobs',      label:'Jobs',      icon:'🧽'},
+  {section:'Sales'},
+  {id:'quotes',    label:'Quotes',    icon:'📝'},
+  {id:'invoices',  label:'Invoices',  icon:'🧾'},
+  {id:'revenue',   label:'Revenue',   icon:'💰'},
+  {section:'Reference'},
+  {id:'customers', label:'Customers', icon:'👥'},
+  {id:'pricing',   label:'Pricing Cheat Sheet', icon:'🏷️'},
+  {id:'gallery',   label:'Before / After', icon:'🖼️'},
+  {section:'System'},
+  {id:'settings',  label:'Settings',  icon:'⚙️'}
+];
+
+function buildNav(){
+  const nav=document.getElementById('nav');
+  nav.innerHTML = NAV.map(n=>{
+    if(n.section) return `<div class="nav-section">${n.section}</div>`;
+    let badge='';
+    if(n.id==='schedule'){ const t=DB.jobs.filter(j=>j.status==='scheduled'&&daysUntil(j.date)!=null&&daysUntil(j.date)>=0&&daysUntil(j.date)<=2).length; if(t)badge=`<span class="badge">${t}</span>`; }
+    if(n.id==='invoices'){ const o=DB.invoices.filter(i=>i.status==='sent'||i.status==='overdue').length; if(o)badge=`<span class="badge">${o}</span>`; }
+    if(n.id==='quotes'){ const q=DB.quotes.filter(x=>x.status==='sent').length; if(q)badge=`<span class="badge">${q}</span>`; }
+    return `<button class="nav-item ${ROUTE===n.id?'active':''}" onclick="go('${n.id}')"><span class="ico">${n.icon}</span>${n.label}${badge}</button>`;
+  }).join('');
+}
+function go(route){ ROUTE=route; toggleNav(false); render(); window.scrollTo(0,0); }
+
+const TITLES={
+  dashboard:['Dashboard','Your business at a glance'],
+  schedule:['Schedule','Upcoming and past jobs'],
+  jobs:['Jobs','Every job, tracked start to finish'],
+  quotes:['Quotes','Estimates sent to customers'],
+  invoices:['Invoices','Billing and payments'],
+  revenue:['Revenue','Money in, money out, profit'],
+  customers:['Customers','Your client book'],
+  pricing:['Pricing Cheat Sheet','What you charge, at a glance'],
+  gallery:['Before / After','Your photo showcase'],
+  settings:['Settings','Business info & Google Sheets sync']
+};
+
+function render(){
+  const [t,s]=TITLES[ROUTE]||['Dashboard',''];
+  document.getElementById('pageTitle').textContent=t;
+  document.getElementById('pageSub').textContent=s;
+  document.getElementById('bizName').textContent=(CFG.bizName||'Exterior Wash').replace(/ LLC$/,'');
+  buildNav();
+  const v=document.getElementById('view');
+  const fn=({dashboard:viewDashboard,schedule:viewSchedule,jobs:viewJobs,quotes:viewQuotes,invoices:viewInvoices,revenue:viewRevenue,customers:viewCustomers,pricing:viewPricing,gallery:viewGallery,settings:viewSettings})[ROUTE];
+  v.innerHTML = fn ? fn() : '<div class="empty">Not found</div>';
+  if(afterRender) { const f=afterRender; afterRender=null; f(); }
+}
+let afterRender=null;
+
+/* ---------------------------------------------------------------------
+   6. UI PRIMITIVES
+   ------------------------------------------------------------------- */
+function toggleNav(open){
+  document.getElementById('sidebar').classList.toggle('open', open);
+  document.getElementById('navBackdrop').classList.toggle('open', open);
+}
+function toast(msg, type='info'){
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  t.innerHTML=`<span>${type==='ok'?'✓':type==='err'?'⚠':'ℹ'}</span><span>${esc(msg)}</span>`;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='.3s'; setTimeout(()=>t.remove(),300); }, 3400);
+}
+function openModal(html, wide){
+  const box=document.getElementById('modalBox');
+  box.className='modal'+(wide?' wide':'');
+  box.innerHTML=html;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow='';
+  setTimeout(()=>{ if(!document.getElementById('modalOverlay').classList.contains('open')) document.getElementById('modalBox').innerHTML=''; },200);
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+function statusChip(status){
+  const m={
+    scheduled:['chip-blue','Scheduled'], completed:['chip-green','Completed'], cancelled:['chip-gray','Cancelled'], 'in-progress':['chip-amber','In Progress'],
+    draft:['chip-gray','Draft'], sent:['chip-amber','Sent'], accepted:['chip-green','Accepted'], declined:['chip-red','Declined'], expired:['chip-gray','Expired'],
+    paid:['chip-green','Paid'], overdue:['chip-red','Overdue'], void:['chip-gray','Void']
+  };
+  const [c,l]=m[status]||['chip-gray',status||'—'];
+  return `<span class="chip ${c}"><span class="d" style="background:currentColor"></span>${l}</span>`;
+}
+function colorHex(c){ return {blue:'var(--brand)',green:'var(--green)',amber:'var(--amber)',purple:'var(--purple)',red:'var(--red)',gray:'var(--text-3)'}[c]||'var(--brand)'; }
+function colorSoft(c){ return {blue:'var(--brand-soft)',green:'var(--green-soft)',amber:'var(--amber-soft)',purple:'var(--purple-soft)',red:'var(--red-soft)',gray:'#eef1f5'}[c]||'var(--brand-soft)'; }
+
+/* ---------------------------------------------------------------------
+   7. VIEW: DASHBOARD
+   ------------------------------------------------------------------- */
+function viewDashboard(){
+  const st=revenueStats();
+  const upcoming=DB.jobs.filter(j=>j.status==='scheduled').sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);
+  const recentInv=DB.invoices.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);
+  const openQuotes=DB.quotes.filter(q=>q.status==='sent');
+  const mr=monthlyRevenue();
+  const thisMonth=mr[mr.length-1], lastMonth=mr[mr.length-2]||{rev:0};
+  const momPct = lastMonth.rev ? Math.round((thisMonth.rev-lastMonth.rev)/lastMonth.rev*100) : 0;
+
+  const banner = !CFG.apiUrl ? `
+    <div class="setup-banner">
+      <span class="sb-ico">🔗</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13.5px">Connect your Google Sheet to save data & send emails</div>
+        <div style="font-size:12.5px;color:var(--text-2)">Right now everything is saved only in this browser. Connect Google Sheets to back it up, sync across devices, and enable email/quote links.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="go('settings')">Set up sync</button>
+    </div>` : '';
+
+  return `
+  ${banner}
+  <div class="grid kpi-grid" style="margin-bottom:22px">
+    ${kpi('💰','var(--green)','var(--green-soft)','Revenue this month',fmtMoney0(thisMonth.rev), momPct>=0?`<span class="kd up">▲ ${momPct}% vs last mo</span>`:`<span class="kd down">▼ ${Math.abs(momPct)}% vs last mo</span>`)}
+    ${kpi('🧾','var(--amber)','var(--amber-soft)','Outstanding',fmtMoney0(st.totalOut),`<span class="kd flat">${DB.invoices.filter(i=>i.status==='sent'||i.status==='overdue').length} unpaid invoices</span>`)}
+    ${kpi('📅','var(--brand)','var(--brand-soft)','Jobs scheduled',DB.jobs.filter(j=>j.status==='scheduled').length,`<span class="kd flat">Next: ${upcoming[0]?fmtDateShort(upcoming[0].date):'none'}</span>`)}
+    ${kpi('📈','var(--purple)','var(--purple-soft)','Est. profit (all-time)',fmtMoney0(st.profit),`<span class="kd flat">Rev ${fmtMoney0(st.jobsRev)} − costs</span>`)}
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.6fr 1fr;align-items:start">
+    <div class="card">
+      <div class="card-head"><h3>Revenue vs Expenses</h3><span class="sub">Last 6 months</span></div>
+      <div class="card-pad"><div style="position:relative;height:250px"><canvas id="revChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Upcoming Jobs</h3><button class="btn btn-soft btn-sm" style="margin-left:auto" onclick="go('schedule')">View all</button></div>
+      <div class="card-pad" style="padding:8px">
+        ${upcoming.length?upcoming.map(j=>{
+          const du=daysUntil(j.date);
+          return `<div class="row-click" onclick="openJob('${j.id}')" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background=''">
+            <div style="text-align:center;min-width:44px">
+              <div style="font-size:11px;color:var(--text-3);font-weight:700;text-transform:uppercase">${new Date(j.date+'T00:00:00').toLocaleDateString('en-US',{month:'short'})}</div>
+              <div style="font-size:19px;font-weight:800;line-height:1">${new Date(j.date+'T00:00:00').getDate()}</div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(j.title)}</div>
+              <div style="font-size:12px;color:var(--text-3)">${esc(custName(j.customerId))} · ${j.time||'—'}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:700">${fmtMoney0(j.price)}</div>
+              <div style="font-size:11px;color:${du<=1?'var(--red)':'var(--text-3)'};font-weight:600">${du===0?'Today':du===1?'Tomorrow':du+' days'}</div>
+            </div>
+          </div>`;
+        }).join(''):'<div class="empty" style="padding:30px"><div class="ei">📅</div><h4>No upcoming jobs</h4></div>'}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;align-items:start;margin-top:16px">
+    <div class="card">
+      <div class="card-head"><h3>Open Quotes</h3><span class="sub">Awaiting response</span><button class="btn btn-soft btn-sm" style="margin-left:auto" onclick="go('quotes')">All quotes</button></div>
+      <div class="table-wrap">
+        <table><tbody>
+        ${openQuotes.length?openQuotes.map(q=>{
+          const t=docTotal(q);
+          return `<tr class="row-click" onclick="openQuote('${q.id}')"><td><b>${q.number}</b><div style="font-size:12px;color:var(--text-3)">${esc(custName(q.customerId))}</div></td><td>${fmtMoney(t.total)}</td><td>${statusChip(q.status)}</td><td style="text-align:right;color:var(--text-3);font-size:12px">exp ${fmtDateShort(q.validUntil)}</td></tr>`;
+        }).join(''):'<tr><td colspan="4"><div class="empty" style="padding:26px"><div class="ei">📝</div><h4>No open quotes</h4></div></td></tr>'}
+        </tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Recent Invoices</h3><button class="btn btn-soft btn-sm" style="margin-left:auto" onclick="go('invoices')">All invoices</button></div>
+      <div class="table-wrap">
+        <table><tbody>
+        ${recentInv.length?recentInv.map(i=>{
+          const t=docTotal(i);
+          return `<tr class="row-click" onclick="openInvoice('${i.id}')"><td><b>${i.number}</b><div style="font-size:12px;color:var(--text-3)">${esc(custName(i.customerId))}</div></td><td>${fmtMoney(t.total)}</td><td>${statusChip(i.status)}</td><td style="text-align:right;color:var(--text-3);font-size:12px">${fmtDateShort(i.date)}</td></tr>`;
+        }).join(''):'<tr><td colspan="4"><div class="empty" style="padding:26px">No invoices yet</div></td></tr>'}
+        </tbody></table>
+      </div>
+    </div>
+  </div>`;
+}
+function kpi(icon,fg,bg,label,val,delta){
+  return `<div class="kpi">
+    <div class="ki" style="background:${bg};color:${fg}">${icon}</div>
+    <div class="kl">${label}</div>
+    <div class="kv">${val}</div>
+    ${delta||''}
+  </div>`;
+}
+afterRenderDashboardChart=null;
+// Draw chart after dashboard renders
+const _origRender=render;
+render=function(){ _origRender(); if(ROUTE==='dashboard') drawRevChart(); if(ROUTE==='revenue') drawRevenueCharts(); };
+function drawRevChart(){
+  const el=document.getElementById('revChart'); if(!el||!window.Chart) return;
+  destroyChart(el);
+  const mr=monthlyRevenue();
+  el._chart=new Chart(el,{type:'bar',data:{labels:mr.map(m=>m.label),datasets:[
+    {label:'Revenue',data:mr.map(m=>m.rev),backgroundColor:'#0a66cf',borderRadius:6,maxBarThickness:34},
+    {label:'Expenses',data:mr.map(m=>m.exp),backgroundColor:'#e6eaf0',borderRadius:6,maxBarThickness:34}
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,boxHeight:12,usePointStyle:true,padding:16,font:{size:12}}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>CFG.currency+v},grid:{color:'#eef1f5'}}}}});
+}
+function destroyChart(el){ if(el && el._chart){ try{ el._chart.destroy(); }catch(e){} el._chart=null; } }
+
+/* ---------------------------------------------------------------------
+   8. VIEW: SCHEDULE (calendar + list)
+   ------------------------------------------------------------------- */
+let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
+function viewSchedule(){
+  return `
+  <div class="toolbar">
+    <div class="pill-tabs">
+      <button class="${scheduleMode==='cal'?'active':''}" onclick="scheduleMode='cal';render()">📅 Calendar</button>
+      <button class="${scheduleMode==='list'?'active':''}" onclick="scheduleMode='list';render()">📋 List</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-primary" onclick="jobForm()"><span style="font-size:16px">＋</span> New Job</button>
+  </div>
+  ${scheduleMode==='cal'?calendarHTML():scheduleListHTML()}`;
+}
+let scheduleMode='cal';
+function calendarHTML(){
+  const first=new Date(calYear,calMonth,1);
+  const startDow=first.getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const monthName=first.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const cells=[];
+  const prevDays=new Date(calYear,calMonth,0).getDate();
+  for(let i=startDow-1;i>=0;i--) cells.push({day:prevDays-i,other:true});
+  for(let d=1;d<=daysInMonth;d++) cells.push({day:d,other:false});
+  while(cells.length%7) cells.push({day:cells.length-daysInMonth-startDow+1,other:true});
+  const dows=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const t=new Date();
+  return `
+  <div class="card">
+    <div class="card-head">
+      <button class="btn-icon" onclick="calNav(-1)" style="font-size:18px">‹</button>
+      <h3 style="min-width:190px;text-align:center">${monthName}</h3>
+      <button class="btn-icon" onclick="calNav(1)" style="font-size:18px">›</button>
+      <button class="btn btn-ghost btn-sm" onclick="calToday()" style="margin-left:8px">Today</button>
+      <div style="margin-left:auto;display:flex;gap:14px;font-size:12px;color:var(--text-2)">
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--brand);margin-right:5px"></span>Scheduled</span>
+        <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--green);margin-right:5px"></span>Completed</span>
+      </div>
+    </div>
+    <div class="card-pad">
+      <div class="cal-grid">
+        ${dows.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+        ${cells.map(c=>{
+          if(c.other) return `<div class="cal-cell other"></div>`;
+          const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(c.day).padStart(2,'0')}`;
+          const isToday = t.getFullYear()===calYear && t.getMonth()===calMonth && t.getDate()===c.day;
+          const jobs=DB.jobs.filter(j=>j.date===dateStr);
+          return `<div class="cal-cell ${isToday?'today':''}" onclick="jobForm(null,'${dateStr}')">
+            <div class="cal-num">${c.day}</div>
+            ${jobs.slice(0,3).map(j=>{
+              const bg=j.status==='completed'?'var(--green-soft)':j.status==='cancelled'?'#eef1f5':'var(--brand-soft)';
+              const fg=j.status==='completed'?'#0d7a3c':j.status==='cancelled'?'var(--text-3)':'var(--brand-2)';
+              return `<div class="cal-ev" style="background:${bg};color:${fg}" onclick="event.stopPropagation();openJob('${j.id}')">${j.time?j.time.slice(0,5)+' ':''}${esc(j.title)}</div>`;
+            }).join('')}
+            ${jobs.length>3?`<div style="font-size:10px;color:var(--text-3);font-weight:600;padding-left:4px">+${jobs.length-3} more</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+function calNav(d){ calMonth+=d; if(calMonth<0){calMonth=11;calYear--} if(calMonth>11){calMonth=0;calYear++} render(); }
+function calToday(){ const t=new Date(); calMonth=t.getMonth(); calYear=t.getFullYear(); render(); }
+function scheduleListHTML(){
+  const sorted=DB.jobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  return jobsTable(sorted);
+}
+
+/* ---------------------------------------------------------------------
+   9. VIEW: JOBS
+   ------------------------------------------------------------------- */
+let jobFilter='all';
+function viewJobs(){
+  let jobs=DB.jobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(jobFilter!=='all') jobs=jobs.filter(j=>j.status===jobFilter);
+  const counts=k=>DB.jobs.filter(j=>k==='all'||j.status===k).length;
+  return `
+  <div class="toolbar">
+    <div class="pill-tabs">
+      ${['all','scheduled','completed','cancelled'].map(k=>`<button class="${jobFilter===k?'active':''}" onclick="jobFilter='${k}';render()">${k[0].toUpperCase()+k.slice(1)} <span style="opacity:.6">${counts(k)}</span></button>`).join('')}
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-primary" onclick="jobForm()"><span style="font-size:16px">＋</span> New Job</button>
+  </div>
+  <div class="card"><div class="table-wrap">${jobsTable(jobs)}</div></div>`;
+}
+function jobsTable(jobs){
+  if(!jobs.length) return '<div class="empty"><div class="ei">🧽</div><h4>No jobs yet</h4><p>Create your first job to get started.</p></div>';
+  return `<table>
+    <thead><tr><th>Job</th><th>Customer</th><th>Date</th><th>Services</th><th>Photos</th><th>Price</th><th>Status</th><th></th></tr></thead>
+    <tbody>${jobs.map(j=>{
+      const photos=(j.beforePhotos||[]).length+(j.afterPhotos||[]).length;
+      return `<tr class="row-click" onclick="openJob('${j.id}')">
+        <td><b>${esc(j.title)}</b><div style="font-size:12px;color:var(--text-3)">${esc((j.address||'').slice(0,34))}</div></td>
+        <td>${esc(custName(j.customerId))}</td>
+        <td class="mono">${fmtDateShort(j.date)}<div style="font-size:11px;color:var(--text-3)">${j.time||''}</div></td>
+        <td>${(j.services||[]).map(s=>{const sv=service(s);return `<span class="chip chip-${sv?sv.color:'gray'}" style="margin:1px">${sv?sv.emoji:''} ${esc(s.length>16?s.slice(0,16)+'…':s)}</span>`;}).join(' ')||'—'}</td>
+        <td>${photos?`<span class="chip chip-purple">🖼️ ${photos}</span>`:'<span style="color:var(--text-3)">—</span>'}</td>
+        <td class="mono"><b>${fmtMoney0(j.price)}</b></td>
+        <td>${statusChip(j.status)}</td>
+        <td style="text-align:right"><button class="btn-icon" onclick="event.stopPropagation();jobForm('${j.id}')">✏️</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+/* ---- Job detail modal ---- */
+function openJob(id){
+  const j=DB.jobs.find(x=>x.id===id); if(!j) return;
+  const c=customer(j.customerId);
+  const before=j.beforePhotos||[], after=j.afterPhotos||[];
+  const svcHTML=(j.services||[]).map(s=>{const sv=service(s);return `<span class="chip chip-${sv?sv.color:'gray'}">${sv?sv.emoji:''} ${esc(s)}</span>`;}).join(' ')||'—';
+  const profit=(Number(j.price)||0)-(Number(j.cost)||0);
+  openModal(`
+    <div class="modal-head">
+      <div style="flex:1">
+        <h2>${esc(j.title)}</h2>
+        <div class="sub">${esc(custName(j.customerId))} · ${fmtDate(j.date)} ${j.time||''}</div>
+      </div>
+      ${statusChip(j.status)}
+      <button class="btn-icon" onclick="closeModal()" style="margin-left:10px;font-size:18px">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="stat-inline" style="margin-bottom:18px">
+        <div><div class="si-l">Price</div><div class="si-v">${fmtMoney0(j.price)}</div></div>
+        <div><div class="si-l">Cost</div><div class="si-v" style="color:var(--text-2)">${fmtMoney0(j.cost)}</div></div>
+        <div><div class="si-l">Profit</div><div class="si-v" style="color:var(--green)">${fmtMoney0(profit)}</div></div>
+        <div><div class="si-l">Margin</div><div class="si-v">${j.price?Math.round(profit/j.price*100):0}%</div></div>
+      </div>
+      <div class="field"><label>Services</label><div>${svcHTML}</div></div>
+      ${j.address?`<div class="field"><label>Address</label><div>📍 ${esc(j.address)}</div></div>`:''}
+      ${c?`<div class="field"><label>Contact</label><div>${c.phone?'📞 '+esc(c.phone)+'  ':''}${c.email?'✉️ '+esc(c.email):''}</div></div>`:''}
+      ${j.notes?`<div class="field"><label>Notes</label><div style="background:var(--surface-2);padding:11px 13px;border-radius:9px;white-space:pre-wrap">${esc(j.notes)}</div></div>`:''}
+
+      <div class="divider"></div>
+      <div style="display:flex;align-items:center;margin-bottom:12px">
+        <div class="section-title" style="margin:0">📸 Before / After Photos</div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-soft btn-sm" onclick="addPhoto('${j.id}','before')">+ Before</button>
+          <button class="btn btn-soft btn-sm" onclick="addPhoto('${j.id}','after')">+ After</button>
+        </div>
+      </div>
+      ${before.length&&after.length?`
+        <div class="field"><label>Slide to compare</label>${compareSlider(before[0],after[0])}</div>`:''}
+      <div class="field-row" style="margin-top:4px">
+        <div><label>Before (${before.length})</label>${photoStrip(before,j.id,'before')}</div>
+        <div><label>After (${after.length})</label>${photoStrip(after,j.id,'after')}</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="jobForm('${j.id}')">✏️ Edit</button>
+      ${j.status==='scheduled'?`<button class="btn btn-soft" onclick="markJobDone('${j.id}')">✓ Mark Completed</button>`:''}
+      <button class="btn btn-soft" onclick="invoiceFromJob('${j.id}')">🧾 Create Invoice</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-danger btn-sm" onclick="deleteJob('${j.id}')">Delete</button>
+    </div>
+  `, true);
+}
+function photoStrip(arr, jobId, kind){
+  if(!arr.length) return `<div style="border:2px dashed var(--border-strong);border-radius:10px;padding:22px;text-align:center;color:var(--text-3);font-size:12px;cursor:pointer" onclick="addPhoto('${jobId}','${kind}')">+ Add ${kind} photo</div>`;
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px">${arr.map((p,i)=>`
+    <div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+      <img src="${p}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="lightbox('${jobId}','${kind}',${i})">
+      <button class="btn-icon" onclick="removePhoto('${jobId}','${kind}',${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:#fff;padding:2px 5px;border-radius:6px;font-size:11px">✕</button>
+    </div>`).join('')}</div>`;
+}
+function compareSlider(before, after){
+  return `<div class="photo-compare" id="pcmp" onmousedown="startCompare(event)" ontouchstart="startCompare(event)">
+    <img src="${before}" class="cmp-before">
+    <div class="after-wrap" id="cmpAfter"><img src="${after}" style="width:200%;max-width:none"></div>
+    <span class="lbl b">BEFORE</span><span class="lbl a">AFTER</span>
+    <div class="slider-line" id="cmpLine"><div class="slider-handle">⟺</div></div>
+  </div>`;
+}
+let _cmpDrag=false;
+function startCompare(e){ _cmpDrag=true; moveCompare(e); }
+function moveCompare(e){
+  if(!_cmpDrag) return;
+  const el=document.getElementById('pcmp'); if(!el) return;
+  const rect=el.getBoundingClientRect();
+  const x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+  let pct=Math.max(0,Math.min(100,x/rect.width*100));
+  document.getElementById('cmpAfter').style.width=pct+'%';
+  document.getElementById('cmpLine').style.left=pct+'%';
+  const img=document.querySelector('#cmpAfter img'); if(img) img.style.width=(100/pct*100)+'%';
+}
+document.addEventListener('mousemove',moveCompare);
+document.addEventListener('touchmove',moveCompare);
+document.addEventListener('mouseup',()=>_cmpDrag=false);
+document.addEventListener('touchend',()=>_cmpDrag=false);
+
+/* ---- Photo add/remove (with resize to keep storage small) ---- */
+function addPhoto(jobId, kind){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=true;
+  inp.onchange=async()=>{
+    const j=DB.jobs.find(x=>x.id===jobId); if(!j) return;
+    const key=kind==='before'?'beforePhotos':'afterPhotos';
+    j[key]=j[key]||[];
+    for(const f of inp.files){
+      try{ const data=await resizeImage(f, 1280, .78); j[key].push(data); }
+      catch(e){ toast('Could not read '+f.name,'err'); }
+    }
+    saveDB(); openJob(jobId); toast(inp.files.length+' photo(s) added','ok');
+  };
+  inp.click();
+}
+function removePhoto(jobId, kind, i){
+  const j=DB.jobs.find(x=>x.id===jobId); if(!j) return;
+  const key=kind==='before'?'beforePhotos':'afterPhotos';
+  j[key].splice(i,1); saveDB(); openJob(jobId);
+}
+function resizeImage(file, maxDim, quality){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let{width:w,height:h}=img;
+        if(w>h && w>maxDim){ h=h*maxDim/w; w=maxDim; }
+        else if(h>maxDim){ w=w*maxDim/h; h=maxDim; }
+        const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(cv.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=reject; img.src=r.result;
+    };
+    r.onerror=reject; r.readAsDataURL(file);
+  });
+}
+function lightbox(jobId,kind,i){
+  const j=DB.jobs.find(x=>x.id===jobId); const arr=kind==='before'?j.beforePhotos:j.afterPhotos;
+  openModal(`<div style="padding:10px;background:#111"><img src="${arr[i]}" style="width:100%;border-radius:8px;display:block"></div><div style="text-align:center;padding:10px"><button class="btn btn-ghost" onclick="openJob('${jobId}')">← Back to job</button></div>`, true);
+}
+
+function markJobDone(id){
+  const j=DB.jobs.find(x=>x.id===id); j.status='completed'; saveDB(); openJob(id); toast('Job marked completed','ok');
+}
+function deleteJob(id){
+  confirmDialog('Delete this job?','This removes the job and its photos. This can\'t be undone.',()=>{
+    DB.jobs=DB.jobs.filter(j=>j.id!==id); saveDB(); closeModal(); render(); toast('Job deleted','ok');
+  });
+}
+
+/* ---- Job form ---- */
+function jobForm(id, presetDate){
+  const j = id ? DB.jobs.find(x=>x.id===id) : {id:null, customerId:'', title:'', services:[], date:presetDate||todayISO(), time:'09:00', status:'scheduled', address:'', price:'', cost:'', notes:''};
+  const custOpts=DB.customers.map(c=>`<option value="${c.id}" ${c.id===j.customerId?'selected':''}>${esc(c.name)}</option>`).join('');
+  const svcChecks=DB.services.map(s=>`<label style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-weight:500">
+    <input type="checkbox" name="jsvc" value="${esc(s.name)}" ${(j.services||[]).includes(s.name)?'checked':''}> ${s.emoji} ${esc(s.name)}</label>`).join('');
+  openModal(`
+    <div class="modal-head"><div style="flex:1"><h2>${id?'Edit Job':'New Job'}</h2><div class="sub">${id?j.title:'Schedule a new job'}</div></div><button class="btn-icon" onclick="closeModal()" style="font-size:18px">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Job title *</label><input class="input" id="jf_title" value="${esc(j.title)}" placeholder="e.g. Full House Soft Wash"></div>
+      <div class="field-row">
+        <div class="field"><label>Customer</label>
+          <select class="input" id="jf_customer"><option value="">— Select —</option>${custOpts}</select>
+          <div class="hint" style="margin-top:5px"><a href="#" onclick="closeModal();customerForm();return false">+ Add new customer</a></div>
+        </div>
+        <div class="field"><label>Status</label>
+          <select class="input" id="jf_status">
+            ${['scheduled','in-progress','completed','cancelled'].map(s=>`<option ${s===j.status?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="field-row-3">
+        <div class="field"><label>Date</label><input class="input" type="date" id="jf_date" value="${j.date||''}"></div>
+        <div class="field"><label>Time</label><input class="input" type="time" id="jf_time" value="${j.time||''}"></div>
+        <div class="field"><label>Address</label><input class="input" id="jf_address" value="${esc(j.address)}" placeholder="Job site"></div>
+      </div>
+      <div class="field"><label>Services <span class="hint">— pick all that apply</span></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">${svcChecks}</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Price charged <span class="hint">(what customer pays)</span></label><input class="input" type="number" step="0.01" id="jf_price" value="${j.price}" placeholder="0.00"></div>
+        <div class="field"><label>Your cost <span class="hint">(chemicals, etc.)</span></label><input class="input" type="number" step="0.01" id="jf_cost" value="${j.cost}" placeholder="0.00"></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea class="input" id="jf_notes" placeholder="Access notes, gate code, special care…">${esc(j.notes)}</textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="saveJob('${id||''}')">${id?'Save Changes':'Create Job'}</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById('jf_title').focus(),100);
+}
+function saveJob(id){
+  const g=x=>document.getElementById('jf_'+x).value;
+  const title=g('title').trim();
+  if(!title) return toast('Job title is required','err');
+  const services=[...document.querySelectorAll('input[name=jsvc]:checked')].map(c=>c.value);
+  const rec={
+    customerId:g('customer'), title, status:g('status'), date:g('date'), time:g('time'),
+    address:g('address'), price:parseFloat(g('price'))||0, cost:parseFloat(g('cost'))||0, notes:g('notes'), services
+  };
+  if(id){ const j=DB.jobs.find(x=>x.id===id); Object.assign(j, rec); }
+  else { DB.jobs.push({id:uid('job'), ...rec, beforePhotos:[], afterPhotos:[], createdAt:new Date().toISOString()}); }
+  saveDB(); closeModal(); render(); toast(id?'Job updated':'Job created','ok');
+}
+
+function confirmDialog(title, msg, onYes, yesLabel='Delete'){
+  const box=document.getElementById('modalBox');
+  const prev=box.innerHTML, prevClass=box.className;
+  openModal(`<div class="modal-head"><h2>${esc(title)}</h2></div>
+    <div class="modal-body"><p style="color:var(--text-2)">${esc(msg)}</p></div>
+    <div class="modal-foot"><button class="btn btn-danger" id="cd_yes">${yesLabel}</button><button class="btn btn-ghost" onclick="closeModal()">Cancel</button></div>`);
+  document.getElementById('cd_yes').onclick=()=>{ onYes(); };
+}
+
+/* ---------------------------------------------------------------------
+   10. VIEW: QUOTES
+   ------------------------------------------------------------------- */
+let quoteFilter='all';
+function viewQuotes(){
+  let list=DB.quotes.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(quoteFilter!=='all') list=list.filter(q=>q.status===quoteFilter);
+  const won=DB.quotes.filter(q=>q.status==='accepted').length;
+  const total=DB.quotes.length;
+  return `
+  <div class="grid kpi-grid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+    ${kpi('📝','var(--brand)','var(--brand-soft)','Total quotes',total,'')}
+    ${kpi('📤','var(--amber)','var(--amber-soft)','Awaiting reply',DB.quotes.filter(q=>q.status==='sent').length,'')}
+    ${kpi('✅','var(--green)','var(--green-soft)','Accepted',won,'')}
+    ${kpi('🎯','var(--purple)','var(--purple-soft)','Win rate',total?Math.round(won/total*100)+'%':'—','')}
+  </div>
+  <div class="toolbar">
+    <div class="pill-tabs">${['all','draft','sent','accepted','declined'].map(k=>`<button class="${quoteFilter===k?'active':''}" onclick="quoteFilter='${k}';render()">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>
+    <div class="spacer"></div>
+    <button class="btn btn-primary" onclick="quoteForm()"><span style="font-size:16px">＋</span> New Quote</button>
+  </div>
+  <div class="card"><div class="table-wrap">${docTable(list,'quote')}</div></div>`;
+}
+
+/* ---------------------------------------------------------------------
+   11. VIEW: INVOICES
+   ------------------------------------------------------------------- */
+let invFilter='all';
+function viewInvoices(){
+  let list=DB.invoices.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  // auto-flag overdue
+  list.forEach(i=>{ if(i.status==='sent'&&i.dueDate&&daysUntil(i.dueDate)<0) i.status='overdue'; });
+  if(invFilter!=='all') list=list.filter(i=>i.status===invFilter);
+  const st=revenueStats();
+  return `
+  <div class="grid kpi-grid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+    ${kpi('💵','var(--green)','var(--green-soft)','Collected',fmtMoney0(st.totalPaid),'')}
+    ${kpi('⏳','var(--amber)','var(--amber-soft)','Outstanding',fmtMoney0(st.totalOut),'')}
+    ${kpi('🔴','var(--red)','var(--red-soft)','Overdue',DB.invoices.filter(i=>i.status==='overdue').length,'')}
+    ${kpi('🧾','var(--brand)','var(--brand-soft)','Total invoices',DB.invoices.length,'')}
+  </div>
+  <div class="toolbar">
+    <div class="pill-tabs">${['all','draft','sent','paid','overdue'].map(k=>`<button class="${invFilter===k?'active':''}" onclick="invFilter='${k}';render()">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>
+    <div class="spacer"></div>
+    <button class="btn btn-primary" onclick="invoiceForm()"><span style="font-size:16px">＋</span> New Invoice</button>
+  </div>
+  <div class="card"><div class="table-wrap">${docTable(list,'invoice')}</div></div>`;
+}
+
+function docTable(list, kind){
+  if(!list.length) return `<div class="empty"><div class="ei">${kind==='quote'?'📝':'🧾'}</div><h4>No ${kind}s yet</h4></div>`;
+  const open = kind==='quote'?'openQuote':'openInvoice';
+  return `<table>
+    <thead><tr><th>#</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+    <tbody>${list.map(d=>{
+      const t=docTotal(d);
+      return `<tr class="row-click" onclick="${open}('${d.id}')">
+        <td><b>${d.number}</b></td>
+        <td>${esc(custName(d.customerId))}</td>
+        <td class="mono">${fmtDateShort(d.date)}</td>
+        <td class="mono"><b>${fmtMoney(t.total)}</b></td>
+        <td>${statusChip(d.status)}</td>
+        <td style="text-align:right"><button class="btn-icon" onclick="event.stopPropagation();${kind==='quote'?'quoteForm':'invoiceForm'}('${d.id}')">✏️</button></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+/* ---- Shared document form (quote or invoice) ---- */
+function nextNumber(kind){
+  const arr=kind==='quote'?DB.quotes:DB.invoices;
+  const prefix=kind==='quote'?'Q-':'INV-';
+  const nums=arr.map(d=>parseInt((d.number||'').replace(/\D/g,''))||0);
+  const max=nums.length?Math.max(...nums):(kind==='quote'?1000:2000);
+  return prefix+(max+1);
+}
+function quoteForm(id){ docForm('quote',id); }
+function invoiceForm(id){ docForm('invoice',id); }
+
+function docForm(kind, id){
+  const arr=kind==='quote'?DB.quotes:DB.invoices;
+  const d = id ? arr.find(x=>x.id===id) : {
+    id:null, number:nextNumber(kind), customerId:'', date:todayISO(),
+    validUntil: kind==='quote'?addDays(todayISO(),30):undefined,
+    dueDate: kind==='invoice'?addDays(todayISO(),15):undefined,
+    status:'draft', items:[{desc:'',qty:1,price:''}], notes:'', taxRate:CFG.taxRate||0,
+    token: kind==='quote'?uid('tok'):undefined
+  };
+  const custOpts=DB.customers.map(c=>`<option value="${c.id}" ${c.id===d.customerId?'selected':''}>${esc(c.name)}</option>`).join('');
+  openModal(`
+    <div class="modal-head"><div style="flex:1"><h2>${id?'Edit ':'New '}${kind==='quote'?'Quote':'Invoice'} <span style="color:var(--text-3);font-weight:600">${d.number}</span></h2></div><button class="btn-icon" onclick="closeModal()" style="font-size:18px">✕</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Customer *</label><select class="input" id="df_customer"><option value="">— Select —</option>${custOpts}</select>
+          <div class="hint" style="margin-top:5px"><a href="#" onclick="event.preventDefault();closeModal();customerForm()">+ Add customer</a></div></div>
+        <div class="field"><label>Date</label><input class="input" type="date" id="df_date" value="${d.date}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>${kind==='quote'?'Valid until':'Due date'}</label><input class="input" type="date" id="df_expiry" value="${kind==='quote'?(d.validUntil||''):(d.dueDate||'')}"></div>
+        <div class="field"><label>Tax rate (%)</label><input class="input" type="number" step="0.01" id="df_tax" value="${d.taxRate||0}"></div>
+      </div>
+      <div class="field">
+        <label>Line items</label>
+        <div style="display:grid;grid-template-columns:1fr 90px 110px 120px 36px;gap:10px;font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px" class="li-head">
+          <span>Description</span><span>Qty</span><span>Unit price</span><span>Total</span><span></span>
+        </div>
+        <div id="df_items">${d.items.map((it,i)=>lineItemRow(it,i)).join('')}</div>
+        <button class="btn btn-soft btn-sm" onclick="addLineItem()" style="margin-top:6px">+ Add line</button>
+        <div style="margin-left:auto;margin-top:8px"></div>
+      </div>
+      <div class="field">
+        <label>Add from your services <span class="hint">— quick fill</span></label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${DB.services.map(s=>`<button class="chip chip-${s.color}" style="cursor:pointer;border:none" onclick="quickLine('${esc(s.name).replace(/'/g,"\\'")}',${s.type==='flat'?s.rate:0})">${s.emoji} ${esc(s.name)}</button>`).join('')}</div>
+      </div>
+      <div class="field"><label>Notes / terms</label><textarea class="input" id="df_notes" placeholder="Payment terms, thank-you note…">${esc(d.notes)}</textarea></div>
+      <div id="df_totals" style="text-align:right;font-weight:700"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="saveDoc('${kind}','${id||''}')">${id?'Save':'Create'}</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <div style="flex:1"></div>
+    </div>
+  `, true);
+  updateDocTotals();
+}
+function lineItemRow(it, i){
+  return `<div class="line-item" data-i="${i}">
+    <input class="input li-desc" placeholder="Description" value="${esc(it.desc)}" oninput="updateDocTotals()">
+    <input class="input li-qty" type="number" step="1" value="${it.qty||1}" oninput="updateDocTotals()">
+    <input class="input li-price" type="number" step="0.01" placeholder="0.00" value="${it.price}" oninput="updateDocTotals()">
+    <input class="input li-total" readonly style="background:var(--surface-2);font-weight:700" tabindex="-1">
+    <button class="btn-icon" onclick="this.parentElement.remove();updateDocTotals()">✕</button>
+  </div>`;
+}
+function addLineItem(){ const c=document.getElementById('df_items'); const div=document.createElement('div'); div.innerHTML=lineItemRow({desc:'',qty:1,price:''},c.children.length); c.appendChild(div.firstElementChild); }
+function quickLine(name, price){
+  const c=document.getElementById('df_items');
+  // fill first empty desc row, else add
+  let target=[...c.querySelectorAll('.line-item')].find(r=>!r.querySelector('.li-desc').value);
+  if(!target){ addLineItem(); target=c.lastElementChild; }
+  target.querySelector('.li-desc').value=name;
+  if(price) target.querySelector('.li-price').value=price;
+  updateDocTotals();
+}
+function readDocItems(){
+  return [...document.querySelectorAll('#df_items .line-item')].map(r=>({
+    desc:r.querySelector('.li-desc').value, qty:parseFloat(r.querySelector('.li-qty').value)||0, price:parseFloat(r.querySelector('.li-price').value)||0
+  }));
+}
+function updateDocTotals(){
+  const items=readDocItems();
+  document.querySelectorAll('#df_items .line-item').forEach((r,i)=>{ const it=items[i]; r.querySelector('.li-total').value=fmtMoney(it.qty*it.price); });
+  const sub=items.reduce((s,i)=>s+i.qty*i.price,0);
+  const tax=sub*((parseFloat(document.getElementById('df_tax').value)||0)/100);
+  document.getElementById('df_totals').innerHTML=`<span style="color:var(--text-3);font-weight:600">Subtotal ${fmtMoney(sub)}${tax?` · Tax ${fmtMoney(tax)}`:''}</span> &nbsp; Total <span style="font-size:18px">${fmtMoney(sub+tax)}</span>`;
+}
+function saveDoc(kind, id){
+  const arr=kind==='quote'?DB.quotes:DB.invoices;
+  const g=x=>document.getElementById('df_'+x).value;
+  if(!g('customer')) return toast('Please select a customer','err');
+  const items=readDocItems().filter(i=>i.desc||i.price);
+  if(!items.length) return toast('Add at least one line item','err');
+  const rec={ customerId:g('customer'), date:g('date'), taxRate:parseFloat(g('tax'))||0, notes:g('notes'), items };
+  if(kind==='quote') rec.validUntil=g('expiry'); else rec.dueDate=g('expiry');
+  if(id){ const d=arr.find(x=>x.id===id); Object.assign(d, rec); }
+  else { const rec2={id:uid(kind==='quote'?'qte':'inv'), number:nextNumber(kind), status:'draft', ...rec}; if(kind==='quote')rec2.token=uid('tok'); arr.push(rec2); }
+  saveDB(); closeModal(); render(); toast((kind==='quote'?'Quote':'Invoice')+' saved','ok');
+}
+function addDays(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+
+/* ---- Document preview (shared) ---- */
+function docPreviewHTML(d, kind){
+  const c=customer(d.customerId), t=docTotal(d);
+  return `<div class="doc-preview" id="docPrint">
+    <div class="dp-head">
+      <div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.4px">${esc(CFG.bizName||'Exterior Wash LLC')}</div>
+        <div style="color:var(--text-3);font-size:12px;margin-top:2px">
+          ${CFG.address?esc(CFG.address)+'<br>':''}${CFG.phone?esc(CFG.phone)+' · ':''}${esc(CFG.email||'')}${CFG.website?'<br>'+esc(CFG.website):''}
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:22px;font-weight:800;color:var(--brand);text-transform:uppercase;letter-spacing:1px">${kind==='quote'?'Quote':'Invoice'}</div>
+        <div style="font-weight:700;margin-top:2px">${d.number}</div>
+        <div style="color:var(--text-3);font-size:12px;margin-top:4px">Date: ${fmtDate(d.date)}</div>
+        ${kind==='quote'?`<div style="color:var(--text-3);font-size:12px">Valid until: ${fmtDate(d.validUntil)}</div>`:`<div style="color:var(--text-3);font-size:12px">Due: ${fmtDate(d.dueDate)}</div>`}
+      </div>
+    </div>
+    <div style="margin-bottom:6px;font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Bill To</div>
+    <div style="font-weight:700">${esc(c?c.name:'—')}</div>
+    <div style="color:var(--text-2);font-size:12.5px">${c&&c.address?esc(c.address)+'<br>':''}${c&&c.email?esc(c.email):''}${c&&c.phone?' · '+esc(c.phone):''}</div>
+    <table>
+      <thead><tr><th>Description</th><th style="text-align:center">Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Amount</th></tr></thead>
+      <tbody>${(d.items||[]).map(i=>`<tr><td>${esc(i.desc)}</td><td style="text-align:center">${i.qty}</td><td style="text-align:right">${fmtMoney(i.price)}</td><td style="text-align:right">${fmtMoney(i.qty*i.price)}</td></tr>`).join('')}</tbody>
+    </table>
+    <div class="dp-total">
+      <div class="doc-total-row"><span>Subtotal</span><span>${fmtMoney(t.sub)}</span></div>
+      ${t.tax?`<div class="doc-total-row"><span>Tax (${d.taxRate}%)</span><span>${fmtMoney(t.tax)}</span></div>`:''}
+      <div class="doc-total-row grand"><span>Total</span><span>${fmtMoney(t.total)}</span></div>
+    </div>
+    ${d.notes?`<div style="clear:both;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);color:var(--text-2);font-size:12.5px"><b>Notes:</b> ${esc(d.notes)}</div>`:''}
+  </div>`;
+}
+
+function openQuote(id){
+  const q=DB.quotes.find(x=>x.id===id); if(!q) return;
+  const acceptUrl = CFG.apiUrl ? `${CFG.apiUrl}?page=quote&token=${q.token}` : null;
+  openModal(`
+    <div class="modal-head"><div style="flex:1"><h2>Quote ${q.number}</h2><div class="sub">${esc(custName(q.customerId))}</div></div>${statusChip(q.status)}<button class="btn-icon" onclick="closeModal()" style="margin-left:10px;font-size:18px">✕</button></div>
+    <div class="modal-body">
+      ${docPreviewHTML(q,'quote')}
+      ${q.status==='accepted'?`<div class="setup-banner" style="background:var(--green-soft);border-color:#a7dcbb;margin-top:18px"><span class="sb-ico">✅</span><div><b>Accepted by customer</b><div style="font-size:12px;color:var(--text-2)">${q.respondedAt?'on '+fmtDate((q.respondedAt||'').slice(0,10)):''} — ready to convert to invoice or schedule.</div></div></div>`:''}
+      ${q.status==='declined'?`<div class="setup-banner" style="background:var(--red-soft);border-color:#f0b3ae;margin-top:18px"><span class="sb-ico">❌</span><div><b>Declined by customer</b></div></div>`:''}
+      ${acceptUrl&&(q.status==='sent'||q.status==='draft')?`
+        <div class="field" style="margin-top:18px"><label>Customer accept/decline link <span class="hint">— send this; their choice updates here automatically</span></label>
+          <div style="display:flex;gap:8px"><input class="input mono" style="font-size:12px" readonly value="${acceptUrl}" id="acceptLink"><button class="btn btn-ghost btn-sm" onclick="copyEl('acceptLink')">Copy</button></div>
+        </div>`:''}
+      ${!CFG.apiUrl?`<div class="setup-banner" style="margin-top:18px"><span class="sb-ico">🔗</span><div style="font-size:12.5px">Connect Google Sheets in Settings to email this quote and generate a live accept/decline link.</div></div>`:''}
+    </div>
+    <div class="modal-foot">
+      ${CFG.apiUrl?`<button class="btn btn-primary" onclick="sendDoc('quote','${q.id}')">✉️ Email Quote</button>`:''}
+      <button class="btn btn-ghost" onclick="printDoc()">🖨️ Print / PDF</button>
+      ${q.status!=='accepted'?`<button class="btn btn-soft" onclick="setQuoteStatus('${q.id}','accepted')">Mark Accepted</button>`:`<button class="btn btn-soft" onclick="invoiceFromQuote('${q.id}')">🧾 Convert to Invoice</button>`}
+      <button class="btn btn-ghost btn-sm" onclick="quoteForm('${q.id}')">✏️ Edit</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-danger btn-sm" onclick="deleteDoc('quote','${q.id}')">Delete</button>
+    </div>
+  `, true);
+}
+function openInvoice(id){
+  const inv=DB.invoices.find(x=>x.id===id); if(!inv) return;
+  openModal(`
+    <div class="modal-head"><div style="flex:1"><h2>Invoice ${inv.number}</h2><div class="sub">${esc(custName(inv.customerId))}</div></div>${statusChip(inv.status)}<button class="btn-icon" onclick="closeModal()" style="margin-left:10px;font-size:18px">✕</button></div>
+    <div class="modal-body">
+      ${docPreviewHTML(inv,'invoice')}
+      ${inv.status==='paid'?`<div class="setup-banner" style="background:var(--green-soft);border-color:#a7dcbb;margin-top:18px"><span class="sb-ico">💵</span><div><b>Paid</b> ${inv.paidDate?'on '+fmtDate(inv.paidDate):''}</div></div>`:''}
+    </div>
+    <div class="modal-foot">
+      ${CFG.apiUrl?`<button class="btn btn-primary" onclick="sendDoc('invoice','${inv.id}')">✉️ Email Invoice</button>`:''}
+      <button class="btn btn-ghost" onclick="printDoc()">🖨️ Print / PDF</button>
+      ${inv.status!=='paid'?`<button class="btn btn-soft" onclick="markPaid('${inv.id}')">✓ Mark Paid</button>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="invoiceForm('${inv.id}')">✏️ Edit</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-danger btn-sm" onclick="deleteDoc('invoice','${inv.id}')">Delete</button>
+    </div>
+  `, true);
+}
+function setQuoteStatus(id,st){ const q=DB.quotes.find(x=>x.id===id); q.status=st; if(st==='accepted')q.respondedAt=new Date().toISOString(); saveDB(); openQuote(id); toast('Quote marked '+st,'ok'); }
+function markPaid(id){ const i=DB.invoices.find(x=>x.id===id); i.status='paid'; i.paidDate=todayISO(); saveDB(); openInvoice(id); toast('Invoice marked paid','ok'); }
+function deleteDoc(kind,id){
+  confirmDialog('Delete this '+kind+'?','This cannot be undone.',()=>{
+    if(kind==='quote') DB.quotes=DB.quotes.filter(x=>x.id!==id); else DB.invoices=DB.invoices.filter(x=>x.id!==id);
+    saveDB(); closeModal(); render(); toast(kind[0].toUpperCase()+kind.slice(1)+' deleted','ok');
+  });
+}
+function invoiceFromQuote(id){
+  const q=DB.quotes.find(x=>x.id===id);
+  const inv={id:uid('inv'), number:nextNumber('invoice'), customerId:q.customerId, date:todayISO(), dueDate:addDays(todayISO(),15), status:'draft', items:JSON.parse(JSON.stringify(q.items)), notes:q.notes, taxRate:q.taxRate};
+  DB.invoices.push(inv); saveDB(); closeModal(); ROUTE='invoices'; render(); openInvoice(inv.id); toast('Invoice created from quote','ok');
+}
+function invoiceFromJob(id){
+  const j=DB.jobs.find(x=>x.id===id);
+  const inv={id:uid('inv'), number:nextNumber('invoice'), customerId:j.customerId, jobId:j.id, date:todayISO(), dueDate:addDays(todayISO(),15), status:'draft', items:[{desc:j.title, qty:1, price:j.price}], notes:'', taxRate:CFG.taxRate||0};
+  DB.invoices.push(inv); saveDB(); closeModal(); ROUTE='invoices'; render(); openInvoice(inv.id); toast('Invoice created from job','ok');
+}
+
+/* ---- Send document via Apps Script ---- */
+async function sendDoc(kind, id){
+  const arr=kind==='quote'?DB.quotes:DB.invoices;
+  const d=arr.find(x=>x.id===id); const c=customer(d.customerId);
+  if(!c||!c.email) return toast('Customer has no email address','err');
+  const btn=event&&event.target; if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin"></span> Sending…'; }
+  try{
+    const t=docTotal(d);
+    const acceptUrl = kind==='quote' ? `${CFG.apiUrl}?page=quote&token=${d.token}` : '';
+    await apiCall('sendDoc', { kind, doc:d, customer:c, biz:CFG, acceptUrl, total:t.total });
+    if(d.status==='draft'){ d.status='sent'; }
+    saveDB();
+    toast('Email sent to '+c.email,'ok');
+    kind==='quote'?openQuote(id):openInvoice(id);
+  }catch(e){ toast('Send failed: '+e.message,'err'); if(btn){btn.disabled=false;btn.innerHTML='✉️ Email';} }
+}
+
+function printDoc(){
+  const html=document.getElementById('docPrint').outerHTML;
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>Print</title><style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;padding:40px;color:#1a2233}table{width:100%;border-collapse:collapse;margin:18px 0}th,td{padding:8px;border-bottom:1px solid #e6eaf0;text-align:left;font-size:13px}th{font-size:11px;text-transform:uppercase;color:#8b95a7}.dp-head{display:flex;justify-content:space-between;margin-bottom:24px}.dp-total{width:260px;margin-left:auto}.doc-total-row{display:flex;justify-content:space-between;padding:5px 0}.doc-total-row.grand{border-top:2px solid #1a2233;margin-top:6px;padding-top:10px;font-size:17px;font-weight:800}</style></head><body>${html}</body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300);
+}
+function copyEl(id){ const el=document.getElementById(id); el.select(); document.execCommand('copy'); navigator.clipboard&&navigator.clipboard.writeText(el.value); toast('Link copied','ok'); }
+
+/* ---------------------------------------------------------------------
+   12. VIEW: REVENUE
+   ------------------------------------------------------------------- */
+function viewRevenue(){
+  const st=revenueStats();
+  const mr=monthlyRevenue();
+  const ytd=DB.jobs.filter(j=>j.status==='completed'&&(j.date||'').slice(0,4)===String(new Date().getFullYear())).reduce((s,j)=>s+(Number(j.price)||0),0);
+  // revenue by service
+  const svcRev={};
+  DB.jobs.filter(j=>j.status==='completed').forEach(j=>{ const n=(j.services||[]).length||1; (j.services||['Other']).forEach(s=>{ svcRev[s]=(svcRev[s]||0)+(Number(j.price)||0)/n; }); });
+  const svcRevArr=Object.entries(svcRev).sort((a,b)=>b[1]-a[1]);
+  return `
+  <div class="grid kpi-grid" style="margin-bottom:20px">
+    ${kpi('💵','var(--green)','var(--green-soft)','Collected (paid invoices)',fmtMoney0(st.totalPaid),'')}
+    ${kpi('📅','var(--brand)','var(--brand-soft)','Revenue YTD (jobs)',fmtMoney0(ytd),'')}
+    ${kpi('📉','var(--amber)','var(--amber-soft)','Expenses',fmtMoney0(st.expenses+st.jobCosts),'')}
+    ${kpi('📈','var(--purple)','var(--purple-soft)','Net profit',fmtMoney0(st.profit),'')}
+  </div>
+  <div class="grid" style="grid-template-columns:1.5fr 1fr;align-items:start">
+    <div class="card">
+      <div class="card-head"><h3>Revenue vs Expenses</h3><span class="sub">Last 6 months</span></div>
+      <div class="card-pad"><div style="position:relative;height:240px"><canvas id="revenueBar"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Revenue by Service</h3></div>
+      <div class="card-pad"><div style="position:relative;height:240px"><canvas id="revenueDonut"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;align-items:start;margin-top:16px">
+    <div class="card">
+      <div class="card-head"><h3>Top Services</h3><span class="sub">By completed revenue</span></div>
+      <div class="card-pad">
+        ${svcRevArr.length?svcRevArr.map(([s,v])=>{
+          const sv=service(s); const pct=Math.round(v/svcRevArr[0][1]*100);
+          return `<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px"><span>${sv?sv.emoji:''} ${esc(s)}</span><b>${fmtMoney0(v)}</b></div><div class="progress"><div class="bar" style="width:${pct}%;background:${sv?colorHex(sv.color):'var(--brand)'}"></div></div></div>`;
+        }).join(''):'<div class="empty">No completed jobs yet</div>'}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Expenses</h3><button class="btn btn-soft btn-sm" style="margin-left:auto" onclick="expenseForm()">+ Add expense</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead><tbody>
+        ${DB.expenses.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>`<tr><td class="mono">${fmtDateShort(e.date)}</td><td><span class="chip chip-gray">${esc(e.category)}</span></td><td>${esc(e.desc)}</td><td class="mono"><b>${fmtMoney(e.amount)}</b></td><td style="text-align:right"><button class="btn-icon" onclick="deleteExpense('${e.id}')">✕</button></td></tr>`).join('')||'<tr><td colspan="5"><div class="empty" style="padding:26px">No expenses logged</div></td></tr>'}
+      </tbody></table></div>
+    </div>
+  </div>`;
+}
+function drawRevenueCharts(){
+  if(!window.Chart) return;
+  const mr=monthlyRevenue();
+  const bar=document.getElementById('revenueBar');
+  if(bar){ destroyChart(bar); bar._chart=new Chart(bar,{type:'bar',data:{labels:mr.map(m=>m.label),datasets:[
+    {label:'Revenue',data:mr.map(m=>m.rev),backgroundColor:'#0a66cf',borderRadius:6},
+    {label:'Expenses',data:mr.map(m=>m.exp),backgroundColor:'#f0b3ae',borderRadius:6}
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:16}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>CFG.currency+v},grid:{color:'#eef1f5'}}}}}); }
+  // donut
+  const svcRev={};
+  DB.jobs.filter(j=>j.status==='completed').forEach(j=>{ const n=(j.services||[]).length||1; (j.services||['Other']).forEach(s=>{ svcRev[s]=(svcRev[s]||0)+(Number(j.price)||0)/n; }); });
+  const entries=Object.entries(svcRev).sort((a,b)=>b[1]-a[1]);
+  const donut=document.getElementById('revenueDonut');
+  if(donut){
+    destroyChart(donut);
+    const palette=['#0a66cf','#12a150','#d98a00','#7c5cff','#e0463c','#3d8bff','#0d7a3c','#a86800'];
+    if(entries.length) donut._chart=new Chart(donut,{type:'doughnut',data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),backgroundColor:palette,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,animation:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:10,font:{size:11}}}}}});
+    else donut.parentElement.innerHTML='<div class="empty" style="padding:40px">No completed jobs yet</div>';
+  }
+}
+function expenseForm(){
+  openModal(`<div class="modal-head"><h2>Add Expense</h2><button class="btn-icon" onclick="closeModal()" style="margin-left:auto;font-size:18px">✕</button></div>
+  <div class="modal-body">
+    <div class="field-row"><div class="field"><label>Date</label><input class="input" type="date" id="ex_date" value="${todayISO()}"></div>
+    <div class="field"><label>Amount</label><input class="input" type="number" step="0.01" id="ex_amount" placeholder="0.00"></div></div>
+    <div class="field"><label>Category</label><select class="input" id="ex_category">${['Chemicals','Fuel','Equipment','Insurance','Marketing','Vehicle','Supplies','Other'].map(c=>`<option>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>Description</label><input class="input" id="ex_desc" placeholder="What was it for?"></div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-primary" onclick="saveExpense()">Add</button><button class="btn btn-ghost" onclick="closeModal()">Cancel</button></div>`);
+}
+function saveExpense(){
+  const g=x=>document.getElementById('ex_'+x).value;
+  DB.expenses.push({id:uid('exp'),date:g('date'),amount:parseFloat(g('amount'))||0,category:g('category'),desc:g('desc')});
+  saveDB(); closeModal(); render(); toast('Expense added','ok');
+}
+function deleteExpense(id){ DB.expenses=DB.expenses.filter(e=>e.id!==id); saveDB(); render(); }
+
+/* ---------------------------------------------------------------------
+   13. VIEW: PRICING CHEAT SHEET + CALCULATOR
+   ------------------------------------------------------------------- */
+function viewPricing(){
+  return `
+  <div class="setup-banner" style="background:var(--brand-soft);border-color:#cfe0fa">
+    <span class="sb-ico">💡</span>
+    <div style="flex:1;font-size:12.5px;color:var(--text-2)"><b>Your quick-reference pricing.</b> Tap any service to edit its rate. Use the calculator on the right to price a job on the spot — no more guessing whether it's gutters, softwash, or pressure wash.</div>
+    <button class="btn btn-primary btn-sm" onclick="serviceForm()">+ Add Service</button>
+  </div>
+  <div class="grid" style="grid-template-columns:1.7fr 1fr;align-items:start">
+    <div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">
+        ${DB.services.map(s=>`
+          <div class="price-card" onclick="serviceForm('${s.id}')" style="cursor:pointer">
+            <div class="price-head">
+              <div class="price-emoji" style="background:${colorSoft(s.color)}">${s.emoji}</div>
+              <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">${esc(s.name)}</div>
+              <div style="font-size:11px;color:var(--text-3);text-transform:capitalize">${s.type==='flat'?'Flat rate':s.type+' based'}</div></div>
+            </div>
+            <div class="price-body">
+              <div><span class="price-rate">${s.type==='flat'?fmtMoney0(s.rate):CFG.currency+s.rate}</span> <span class="price-unit">${s.type==='flat'?'':'/ '+s.unit}</span></div>
+              ${s.min?`<div class="price-min">Minimum: <b>${fmtMoney0(s.min)}</b></div>`:''}
+              ${s.notes?`<div style="font-size:12px;color:var(--text-2);margin-top:8px;line-height:1.45">${esc(s.notes)}</div>`:''}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card" style="position:sticky;top:80px">
+      <div class="card-head"><h3>💰 Quick Quote Calculator</h3></div>
+      <div class="card-pad">
+        <div class="field"><label>Service</label>
+          <select class="input" id="calc_svc" onchange="runCalc()">${DB.services.map(s=>`<option value="${s.id}">${s.emoji} ${esc(s.name)}</option>`).join('')}</select>
+        </div>
+        <div class="field" id="calc_measure_wrap"><label id="calc_measure_lbl">Measurement</label><input class="input" type="number" id="calc_measure" placeholder="0" oninput="runCalc()"></div>
+        <div class="field"><label>Adjustment %  <span class="hint">(2-story, heavy stains, etc.)</span></label><input class="input" type="number" id="calc_adj" value="0" oninput="runCalc()"></div>
+        <div class="calc-out" style="margin-top:6px"><div class="co-l">ESTIMATED PRICE</div><div class="co-v" id="calc_result">${CFG.currency}0</div><div style="font-size:11px;color:var(--brand-2);margin-top:4px" id="calc_note"></div></div>
+        <button class="btn btn-soft" style="width:100%;justify-content:center;margin-top:12px" onclick="calcToQuote()">Use in New Quote →</button>
+      </div>
+    </div>
+  </div>`;
+}
+function runCalc(){
+  const s=DB.services.find(x=>x.id===document.getElementById('calc_svc').value); if(!s) return;
+  const mWrap=document.getElementById('calc_measure_wrap'), lbl=document.getElementById('calc_measure_lbl');
+  if(s.type==='flat'){ mWrap.style.display='none'; }
+  else { mWrap.style.display=''; lbl.textContent='Measurement ('+s.unit+')'; }
+  const m=parseFloat(document.getElementById('calc_measure').value)||0;
+  const adj=parseFloat(document.getElementById('calc_adj').value)||0;
+  let base = s.type==='flat' ? s.rate : m*s.rate;
+  base = base*(1+adj/100);
+  let note='';
+  if(s.min && base<s.min){ note=`Below ${fmtMoney0(s.min)} minimum — using minimum`; base=s.min; }
+  else if(s.type!=='flat' && m) note=`${m} ${s.unit} × ${CFG.currency}${s.rate}${adj?` +${adj}%`:''}`;
+  document.getElementById('calc_result').textContent=fmtMoney0(base);
+  document.getElementById('calc_note').textContent=note;
+  window._calcVal={name:s.name, price:Math.round(base)};
+}
+function calcToQuote(){
+  const v=window._calcVal; if(!v||!v.price) return toast('Enter a measurement first','info');
+  ROUTE='quotes'; render();
+  quoteForm();
+  setTimeout(()=>{ quickLine(v.name, v.price); },200);
+}
+function serviceForm(id){
+  const s=id?DB.services.find(x=>x.id===id):{id:null,name:'',emoji:'💦',color:'blue',type:'sqft',rate:'',min:'',unit:'sq ft',notes:''};
+  const emojis=['🏠','🧼','🛣️','🪣','✨','🪵','💦','🪟','🚗','🧹','🌊','🔧'];
+  const colors=['blue','green','amber','purple','red','gray'];
+  openModal(`<div class="modal-head"><div style="flex:1"><h2>${id?'Edit':'Add'} Service</h2></div><button class="btn-icon" onclick="closeModal()" style="font-size:18px">✕</button></div>
+  <div class="modal-body">
+    <div class="field"><label>Service name *</label><input class="input" id="sv_name" value="${esc(s.name)}" placeholder="e.g. House Soft Wash"></div>
+    <div class="field-row">
+      <div class="field"><label>Icon</label><div style="display:flex;flex-wrap:wrap;gap:5px" id="sv_emoji">${emojis.map(e=>`<button class="btn-icon" style="font-size:20px;border:1px solid ${e===s.emoji?'var(--brand)':'var(--border)'};border-radius:8px" onclick="selEmoji(this,'${e}')" data-e="${e}">${e}</button>`).join('')}</div><input type="hidden" id="sv_emoji_val" value="${s.emoji}"></div>
+      <div class="field"><label>Color</label><div style="display:flex;gap:6px" id="sv_color">${colors.map(c=>`<button onclick="selColor(this,'${c}')" data-c="${c}" style="width:30px;height:30px;border-radius:8px;background:${colorHex(c)};border:3px solid ${c===s.color?'var(--text)':'transparent'}"></button>`).join('')}</div><input type="hidden" id="sv_color_val" value="${s.color}"></div>
+    </div>
+    <div class="field-row-3">
+      <div class="field"><label>Pricing type</label><select class="input" id="sv_type" onchange="svcTypeChange()">
+        <option value="sqft" ${s.type==='sqft'?'selected':''}>Per sq ft</option>
+        <option value="linear" ${s.type==='linear'?'selected':''}>Per linear ft</option>
+        <option value="flat" ${s.type==='flat'?'selected':''}>Flat rate</option>
+      </select></div>
+      <div class="field"><label id="sv_rate_lbl">Rate</label><input class="input" type="number" step="0.01" id="sv_rate" value="${s.rate}" placeholder="0.00"></div>
+      <div class="field"><label>Unit label</label><input class="input" id="sv_unit" value="${esc(s.unit)}" placeholder="sq ft"></div>
+    </div>
+    <div class="field"><label>Minimum charge <span class="hint">(0 for none)</span></label><input class="input" type="number" step="0.01" id="sv_min" value="${s.min}" placeholder="0.00"></div>
+    <div class="field"><label>Notes / reminders</label><textarea class="input" id="sv_notes" placeholder="Chemical mix, special care, upsells…">${esc(s.notes)}</textarea></div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-primary" onclick="saveService('${id||''}')">${id?'Save':'Add Service'}</button><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>${id?`<div style="flex:1"></div><button class="btn btn-danger btn-sm" onclick="deleteService('${id}')">Delete</button>`:''}</div>`);
+  svcTypeChange();
+}
+function selEmoji(btn,e){ document.querySelectorAll('#sv_emoji button').forEach(b=>b.style.border='1px solid var(--border)'); btn.style.border='1px solid var(--brand)'; document.getElementById('sv_emoji_val').value=e; }
+function selColor(btn,c){ document.querySelectorAll('#sv_color button').forEach(b=>b.style.border='3px solid transparent'); btn.style.border='3px solid var(--text)'; document.getElementById('sv_color_val').value=c; }
+function svcTypeChange(){ const t=document.getElementById('sv_type').value; document.getElementById('sv_rate_lbl').textContent=t==='flat'?'Flat price':'Rate per unit'; document.getElementById('sv_unit').parentElement.style.opacity=t==='flat'?'.4':'1'; }
+function saveService(id){
+  const g=x=>document.getElementById('sv_'+x).value;
+  if(!g('name').trim()) return toast('Service name required','err');
+  const rec={name:g('name').trim(),emoji:g('emoji_val'),color:g('color_val'),type:g('type'),rate:parseFloat(g('rate'))||0,min:parseFloat(g('min'))||0,unit:g('unit')||'job',notes:g('notes')};
+  if(id){ Object.assign(DB.services.find(x=>x.id===id),rec); } else DB.services.push({id:uid('svc'),...rec});
+  saveDB(); closeModal(); render(); toast('Service saved','ok');
+}
+function deleteService(id){ confirmDialog('Delete this service?','It stays on past jobs/quotes but won\'t appear in new ones.',()=>{ DB.services=DB.services.filter(s=>s.id!==id); saveDB(); closeModal(); render(); toast('Service deleted','ok'); }); }
+
+/* ---------------------------------------------------------------------
+   14. VIEW: CUSTOMERS
+   ------------------------------------------------------------------- */
+function viewCustomers(){
+  const list=DB.customers.slice().sort((a,b)=>a.name.localeCompare(b.name));
+  return `
+  <div class="toolbar"><div class="spacer"></div><button class="btn btn-primary" onclick="customerForm()"><span style="font-size:16px">＋</span> New Customer</button></div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
+  ${list.length?list.map(c=>{
+    const jobs=DB.jobs.filter(j=>j.customerId===c.id);
+    const spend=jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+(Number(j.price)||0),0);
+    return `<div class="card card-pad" style="cursor:pointer" onclick="openCustomer('${c.id}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="avatar" style="width:44px;height:44px;font-size:16px">${esc(c.name.split(' ').map(x=>x[0]).slice(0,2).join(''))}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:700">${esc(c.name)}</div><div style="font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.email||c.phone||'—')}</div></div>
+      </div>
+      <div class="stat-inline" style="margin-top:14px;gap:20px">
+        <div><div class="si-l">Jobs</div><div class="si-v" style="font-size:16px">${jobs.length}</div></div>
+        <div><div class="si-l">Lifetime</div><div class="si-v" style="font-size:16px;color:var(--green)">${fmtMoney0(spend)}</div></div>
+        <div><div class="si-l">Since</div><div class="si-v" style="font-size:16px">${c.createdAt?new Date(c.createdAt).getFullYear():'—'}</div></div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty" style="grid-column:1/-1"><div class="ei">👥</div><h4>No customers yet</h4></div>'}
+  </div>`;
+}
+function openCustomer(id){
+  const c=customer(id);
+  const jobs=DB.jobs.filter(j=>j.customerId===id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const quotes=DB.quotes.filter(q=>q.customerId===id);
+  const invs=DB.invoices.filter(i=>i.customerId===id);
+  const spend=jobs.filter(j=>j.status==='completed').reduce((s,j)=>s+(Number(j.price)||0),0);
+  openModal(`
+    <div class="modal-head"><div class="avatar" style="width:44px;height:44px;font-size:16px;margin-right:12px">${esc(c.name.split(' ').map(x=>x[0]).slice(0,2).join(''))}</div><div style="flex:1"><h2>${esc(c.name)}</h2><div class="sub">Customer since ${c.createdAt?fmtDate((c.createdAt||'').slice(0,10)):'—'}</div></div><button class="btn-icon" onclick="closeModal()" style="font-size:18px">✕</button></div>
+    <div class="modal-body">
+      <div class="stat-inline" style="margin-bottom:18px">
+        <div><div class="si-l">Lifetime value</div><div class="si-v" style="color:var(--green)">${fmtMoney0(spend)}</div></div>
+        <div><div class="si-l">Total jobs</div><div class="si-v">${jobs.length}</div></div>
+        <div><div class="si-l">Quotes</div><div class="si-v">${quotes.length}</div></div>
+        <div><div class="si-l">Invoices</div><div class="si-v">${invs.length}</div></div>
+      </div>
+      <div class="field-row">
+        ${c.phone?`<div class="field"><label>Phone</label><div>📞 <a href="tel:${esc(c.phone)}">${esc(c.phone)}</a></div></div>`:''}
+        ${c.email?`<div class="field"><label>Email</label><div>✉️ <a href="mailto:${esc(c.email)}">${esc(c.email)}</a></div></div>`:''}
+      </div>
+      ${c.address?`<div class="field"><label>Address</label><div>📍 ${esc(c.address)}</div></div>`:''}
+      ${c.notes?`<div class="field"><label>Notes</label><div style="background:var(--surface-2);padding:11px;border-radius:9px">${esc(c.notes)}</div></div>`:''}
+      <div class="divider"></div>
+      <div class="section-title">Job History</div>
+      ${jobs.length?`<div class="table-wrap"><table><tbody>${jobs.map(j=>`<tr class="row-click" onclick="openJob('${j.id}')"><td>${esc(j.title)}</td><td class="mono">${fmtDateShort(j.date)}</td><td>${statusChip(j.status)}</td><td class="mono" style="text-align:right"><b>${fmtMoney0(j.price)}</b></td></tr>`).join('')}</tbody></table></div>`:'<div style="color:var(--text-3)">No jobs yet</div>'}
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="closeModal();jobForm(null);setTimeout(()=>document.getElementById('jf_customer').value='${id}',150)">+ New Job</button>
+      <button class="btn btn-ghost" onclick="customerForm('${id}')">✏️ Edit</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-danger btn-sm" onclick="deleteCustomer('${id}')">Delete</button>
+    </div>
+  `, true);
+}
+function customerForm(id){
+  const c=id?customer(id):{id:null,name:'',email:'',phone:'',address:'',notes:''};
+  openModal(`<div class="modal-head"><h2>${id?'Edit':'New'} Customer</h2><button class="btn-icon" onclick="closeModal()" style="margin-left:auto;font-size:18px">✕</button></div>
+  <div class="modal-body">
+    <div class="field"><label>Name *</label><input class="input" id="cf_name" value="${esc(c.name)}"></div>
+    <div class="field-row"><div class="field"><label>Email</label><input class="input" type="email" id="cf_email" value="${esc(c.email)}"></div>
+    <div class="field"><label>Phone</label><input class="input" id="cf_phone" value="${esc(c.phone)}"></div></div>
+    <div class="field"><label>Address</label><input class="input" id="cf_address" value="${esc(c.address)}"></div>
+    <div class="field"><label>Notes</label><textarea class="input" id="cf_notes">${esc(c.notes)}</textarea></div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-primary" onclick="saveCustomer('${id||''}')">${id?'Save':'Add'}</button><button class="btn btn-ghost" onclick="closeModal()">Cancel</button></div>`);
+  setTimeout(()=>document.getElementById('cf_name').focus(),100);
+}
+function saveCustomer(id){
+  const g=x=>document.getElementById('cf_'+x).value;
+  if(!g('name').trim()) return toast('Name required','err');
+  const rec={name:g('name').trim(),email:g('email').trim(),phone:g('phone').trim(),address:g('address').trim(),notes:g('notes')};
+  if(id) Object.assign(customer(id),rec); else DB.customers.push({id:uid('cus'),...rec,createdAt:todayISO()});
+  saveDB(); closeModal(); render(); toast('Customer saved','ok');
+}
+function deleteCustomer(id){ confirmDialog('Delete this customer?','Their jobs and invoices are kept but will show as unassigned.',()=>{ DB.customers=DB.customers.filter(c=>c.id!==id); saveDB(); closeModal(); render(); toast('Customer deleted','ok'); }); }
+
+/* ---------------------------------------------------------------------
+   15. VIEW: GALLERY (before/after showcase)
+   ------------------------------------------------------------------- */
+function viewGallery(){
+  const withPhotos=DB.jobs.filter(j=>(j.beforePhotos||[]).length&&(j.afterPhotos||[]).length);
+  const anyPhotos=DB.jobs.filter(j=>(j.beforePhotos||[]).length||(j.afterPhotos||[]).length);
+  return `
+  <div class="setup-banner" style="background:var(--purple-soft);border-color:#d3c6ff">
+    <span class="sb-ico">🖼️</span>
+    <div style="flex:1;font-size:12.5px;color:var(--text-2)"><b>Your transformation showcase.</b> Every job with a before <i>and</i> after photo appears here with a slider. Great for marketing, your website, or showing new customers. Add photos from any job.</div>
+  </div>
+  ${withPhotos.length?`
+  <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
+    ${withPhotos.map(j=>`
+      <div class="card">
+        <div class="card-head" style="padding:13px 16px"><div style="flex:1"><h3 style="font-size:14px">${esc(j.title)}</h3><div class="sub">${esc(custName(j.customerId))} · ${fmtDateShort(j.date)}</div></div><button class="btn btn-soft btn-sm" onclick="openJob('${j.id}')">Open</button></div>
+        <div style="padding:12px">${compareSliderStatic(j.beforePhotos[0], j.afterPhotos[0], j.id)}</div>
+      </div>`).join('')}
+  </div>`:`
+  <div class="empty"><div class="ei">🖼️</div><h4>No before/after pairs yet</h4><p>Add a <b>before</b> and an <b>after</b> photo to any job and it appears here.</p>
+  ${anyPhotos.length?`<p style="margin-top:8px">${anyPhotos.length} job(s) have some photos — add the matching before/after to complete them.</p>`:''}
+  <button class="btn btn-primary" style="margin-top:14px" onclick="go('jobs')">Go to Jobs</button></div>`}`;
+}
+function compareSliderStatic(before, after, jid){
+  const uid2='pc_'+Math.random().toString(36).slice(2,8);
+  return `<div class="photo-compare" id="${uid2}" onmousedown="startCompareG(event,'${uid2}')" ontouchstart="startCompareG(event,'${uid2}')">
+    <img src="${before}">
+    <div class="after-wrap"><img src="${after}" style="width:200%;max-width:none"></div>
+    <span class="lbl b">BEFORE</span><span class="lbl a">AFTER</span>
+    <div class="slider-line"><div class="slider-handle">⟺</div></div>
+  </div>`;
+}
+let _gDrag=null;
+function startCompareG(e,id){ _gDrag=id; moveCompareG(e); }
+function moveCompareG(e){
+  if(!_gDrag) return;
+  const el=document.getElementById(_gDrag); if(!el) return;
+  const rect=el.getBoundingClientRect();
+  const x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+  let pct=Math.max(2,Math.min(98,x/rect.width*100));
+  el.querySelector('.after-wrap').style.width=pct+'%';
+  el.querySelector('.slider-line').style.left=pct+'%';
+  el.querySelector('.after-wrap img').style.width=(100/pct*100)+'%';
+}
+document.addEventListener('mousemove',moveCompareG);
+document.addEventListener('touchmove',moveCompareG);
+document.addEventListener('mouseup',()=>_gDrag=null);
+document.addEventListener('touchend',()=>_gDrag=null);
+
+/* ---------------------------------------------------------------------
+   16. VIEW: SETTINGS
+   ------------------------------------------------------------------- */
+function viewSettings(){
+  return `
+  <div class="grid" style="grid-template-columns:1fr 1fr;align-items:start">
+    <div class="card">
+      <div class="card-head"><h3>Business Info</h3><span class="sub">Shows on quotes & invoices</span></div>
+      <div class="card-pad">
+        <div class="field"><label>Business name</label><input class="input" id="set_bizName" value="${esc(CFG.bizName)}"></div>
+        <div class="field-row"><div class="field"><label>Owner name</label><input class="input" id="set_ownerName" value="${esc(CFG.ownerName)}"></div>
+        <div class="field"><label>Email</label><input class="input" id="set_email" value="${esc(CFG.email)}"></div></div>
+        <div class="field-row"><div class="field"><label>Phone</label><input class="input" id="set_phone" value="${esc(CFG.phone)}"></div>
+        <div class="field"><label>Website</label><input class="input" id="set_website" value="${esc(CFG.website)}"></div></div>
+        <div class="field"><label>Address</label><input class="input" id="set_address" value="${esc(CFG.address)}"></div>
+        <div class="field-row"><div class="field"><label>Default tax rate (%)</label><input class="input" type="number" step="0.01" id="set_taxRate" value="${CFG.taxRate}"></div>
+        <div class="field"><label>Currency symbol</label><input class="input" id="set_currency" value="${esc(CFG.currency)}"></div></div>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Business Info</button>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-head"><h3>🔗 Google Sheets Sync</h3><span class="sub">Stores all data & sends email</span></div>
+        <div class="card-pad">
+          <div style="font-size:12.5px;color:var(--text-2);margin-bottom:14px;line-height:1.5">Paste your Google Apps Script Web App URL below. This connects the dashboard to your Google Sheet (your database) and lets it send emails and host quote accept/decline links. <b>See the setup guide</b> for the 5-minute one-time setup.</div>
+          <div class="field"><label>Apps Script Web App URL</label><input class="input mono" style="font-size:12px" id="set_apiUrl" value="${esc(CFG.apiUrl)}" placeholder="https://script.google.com/macros/s/.../exec"></div>
+          <div class="field"><label>Shared secret <span class="hint">(must match the one in Code.gs)</span></label><input class="input mono" style="font-size:12px" id="set_apiSecret" value="${esc(CFG.apiSecret)}" placeholder="a password you choose"></div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px"><input type="checkbox" id="set_autosync" ${CFG.autosync?'checked':''}> Auto-sync changes to Google Sheets</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="saveSync()">Save & Test</button>
+            <button class="btn btn-ghost" onclick="pullSync()">↓ Pull from Sheet</button>
+            <button class="btn btn-ghost" onclick="doPush()">↑ Push to Sheet</button>
+          </div>
+          <div id="syncTestResult" style="margin-top:12px;font-size:13px"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-head"><h3>🔒 Password Lock</h3><span class="sub">${CFG.passHash?'On':'Off'}</span></div>
+        <div class="card-pad">
+          <div style="font-size:12.5px;color:var(--text-2);margin-bottom:14px;line-height:1.5">
+            ${CFG.passHash
+              ? 'A password is required to open this dashboard. Change or remove it below.'
+              : 'Set a password so only you can open this dashboard after hosting it online. You enter it once per device.'}
+          </div>
+          <div class="field"><label>${CFG.passHash?'New password':'Password'} <span class="hint">(leave blank + save to remove)</span></label><input class="input" type="password" id="set_pass1" placeholder="••••••••" autocomplete="new-password"></div>
+          <div class="field"><label>Confirm password</label><input class="input" type="password" id="set_pass2" placeholder="••••••••" autocomplete="new-password"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="savePassword()">${CFG.passHash?'Update Password':'Set Password'}</button>
+            ${CFG.passHash?'<button class="btn btn-ghost" onclick="lockNow()">Log out now</button>':''}
+          </div>
+          <div style="font-size:11.5px;color:var(--text-3);margin-top:12px">Note: this locks the app on this device/browser. It's a privacy gate, not bank-level security — your Google Sheet data stays protected by its own secret regardless.</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-head"><h3>Data & Backup</h3></div>
+        <div class="card-pad">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="exportData()">⬇️ Export backup (JSON)</button>
+            <button class="btn btn-ghost" onclick="importData()">⬆️ Import backup</button>
+            <button class="btn btn-danger btn-sm" onclick="resetData()">Reset all data</button>
+          </div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:12px">Records: ${DB.jobs.length} jobs · ${DB.customers.length} customers · ${DB.quotes.length} quotes · ${DB.invoices.length} invoices · ${DB.services.length} services</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+async function savePassword(){
+  const p1=document.getElementById('set_pass1').value;
+  const p2=document.getElementById('set_pass2').value;
+  if(!p1){
+    if(CFG.passHash && !confirm('Remove the password lock? Anyone with the link will be able to open the dashboard.')) return;
+    CFG.passHash=''; saveCfg();
+    try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
+    toast('Password removed','ok'); render(); return;
+  }
+  if(p1!==p2) return toast('Passwords do not match','err');
+  if(p1.length<4) return toast('Use at least 4 characters','err');
+  CFG.passHash=await sha256(p1); saveCfg();
+  try{ sessionStorage.setItem(SESSION_KEY, CFG.passHash); }catch(e){}  // stay logged in on this device
+  toast('Password set — needed next time on other devices','ok'); render();
+}
+function saveSettings(){
+  ['bizName','ownerName','email','phone','website','address','currency'].forEach(k=>CFG[k]=document.getElementById('set_'+k).value);
+  CFG.taxRate=parseFloat(document.getElementById('set_taxRate').value)||0;
+  saveCfg(); render(); toast('Business info saved','ok');
+}
+async function saveSync(){
+  CFG.apiUrl=document.getElementById('set_apiUrl').value.trim();
+  CFG.apiSecret=document.getElementById('set_apiSecret').value.trim();
+  CFG.autosync=document.getElementById('set_autosync').checked;
+  saveCfg();
+  const res=document.getElementById('syncTestResult');
+  if(!CFG.apiUrl){ setSync('off'); res.innerHTML='<span style="color:var(--text-3)">Sync disabled — running in local mode.</span>'; return; }
+  res.innerHTML='<span class="spin" style="border-color:#ccc;border-top-color:var(--brand)"></span> Testing connection…';
+  const ok=await testConnection();
+  if(ok){ res.innerHTML='<span style="color:var(--green);font-weight:600">✓ Connected! Now pulling any existing data…</span>'; setSync('ok'); await pullSync(true); res.innerHTML='<span style="color:var(--green);font-weight:600">✓ Connected & synced with Google Sheets.</span>'; }
+  else { res.innerHTML='<span style="color:var(--red);font-weight:600">✗ Could not connect. Check the URL, secret, and that the Web App is deployed to "Anyone".</span>'; setSync('err'); }
+}
+function openSettings(){ go('settings'); }
+function exportData(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='exterior-wash-backup-'+todayISO()+'.json'; a.click();
+  toast('Backup downloaded','ok');
+}
+function importData(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=()=>{ const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); DB=d; const b=blankDB(); for(const k in b) if(DB[k]===undefined)DB[k]=b[k]; saveDB(); render(); toast('Backup imported','ok'); }catch(e){ toast('Invalid backup file','err'); } }; r.readAsText(inp.files[0]); };
+  inp.click();
+}
+function resetData(){ confirmDialog('Reset ALL data?','This wipes everything in this browser and reloads demo data. Export a backup first if unsure.',()=>{ DB=seedDB(); saveDB(); render(); toast('Data reset to demo','ok'); },'Reset'); }
+
+/* ---------------------------------------------------------------------
+   17. GLOBAL HELPERS + INIT
+   ------------------------------------------------------------------- */
+function quickAdd(){ jobForm(); }
+function globalSearchHandler(q){
+  q=q.trim().toLowerCase(); if(!q) return;
+  // simple: on Enter jump to best match — here we just filter jobs view
+}
+document.getElementById('globalSearch').addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const q=e.target.value.trim().toLowerCase(); if(!q) return;
+  const job=DB.jobs.find(j=>j.title.toLowerCase().includes(q));
+  const cust=DB.customers.find(c=>c.name.toLowerCase().includes(q));
+  if(cust){ openCustomer(cust.id); }
+  else if(job){ openJob(job.id); }
+  else toast('No match for "'+q+'"','info');
+});
+
+/* ---------------------------------------------------------------------
+   18. PASSWORD LOCK (client-side gate)
+   Not military-grade — GitHub Pages can't do server auth — but keeps the
+   dashboard private from anyone who finds the URL. Your real data is
+   further protected by the Google Sheets secret.
+   ------------------------------------------------------------------- */
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function isUnlocked(){
+  if(!CFG.passHash) return true;                       // no password set
+  try{ return sessionStorage.getItem(SESSION_KEY)===CFG.passHash; }catch(e){ return false; }
+}
+function showLock(){
+  document.querySelector('.app').style.display='none';
+  const lock=document.getElementById('lockScreen');
+  lock.hidden=false;
+  setTimeout(()=>document.getElementById('lockPass').focus(),100);
+}
+async function tryUnlock(e){
+  if(e) e.preventDefault();
+  const val=document.getElementById('lockPass').value;
+  const h=await sha256(val);
+  if(h===CFG.passHash){
+    try{ sessionStorage.setItem(SESSION_KEY, h); }catch(e){}
+    document.getElementById('lockScreen').hidden=true;
+    document.querySelector('.app').style.display='';
+    startApp();
+  }else{
+    const box=document.getElementById('lockBox');
+    box.style.animation='none'; void box.offsetWidth; box.style.animation='shake .4s';
+    document.getElementById('lockErr').hidden=false;
+    document.getElementById('lockPass').value='';
+    document.getElementById('lockPass').focus();
+  }
+  return false;
+}
+function lockNow(){
+  try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
+  location.reload();
+}
+
+function startApp(){
+  setSync('off');
+  if(CFG.apiUrl){ setSync('ok'); pullSync(true); }
+  render();
+}
+function init(){
+  CFG = loadCfg();
+  DB  = loadDB();
+  if(isUnlocked()){ startApp(); }
+  else { showLock(); }
+}
+init();
+
+</script>
+</body>
+</html>
