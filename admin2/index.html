@@ -359,12 +359,16 @@ function blankDB(){
 function loadDB(){
   try{
     const d = JSON.parse(localStorage.getItem(LS_KEY));
-    if(!d) return seedDB();
+    if(!d){
+      // Fresh browser: if connected to a backend, start EMPTY and let the
+      // pull fill it in (avoids demo data reappearing). Otherwise seed demo.
+      return FORCE_API_URL ? blankDB() : seedDB();
+    }
     // ensure all arrays exist
     const b = blankDB();
     for(const k in b) if(d[k]===undefined) d[k]=b[k];
     return d;
-  }catch(e){ return seedDB(); }
+  }catch(e){ return FORCE_API_URL ? blankDB() : seedDB(); }
 }
 function saveDB(opts={}){
   DB.meta = DB.meta || {};
@@ -1732,7 +1736,8 @@ function viewSettings(){
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-ghost" onclick="exportData()">⬇️ Export backup (JSON)</button>
             <button class="btn btn-ghost" onclick="importData()">⬆️ Import backup</button>
-            <button class="btn btn-danger btn-sm" onclick="resetData()">Reset all data</button>
+            <button class="btn btn-ghost btn-sm" onclick="loadDemoData()">Load demo data</button>
+            <button class="btn btn-danger btn-sm" onclick="resetData()">🗑️ Start fresh (clear all)</button>
           </div>
           <div style="font-size:12px;color:var(--text-3);margin-top:12px">Records: ${DB.jobs.length} jobs · ${DB.customers.length} customers · ${DB.quotes.length} quotes · ${DB.invoices.length} invoices · ${DB.services.length} services</div>
         </div>
@@ -1783,7 +1788,14 @@ function importData(){
   inp.onchange=()=>{ const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); DB=d; const b=blankDB(); for(const k in b) if(DB[k]===undefined)DB[k]=b[k]; saveDB(); render(); toast('Backup imported','ok'); }catch(e){ toast('Invalid backup file','err'); } }; r.readAsText(inp.files[0]); };
   inp.click();
 }
-function resetData(){ confirmDialog('Reset ALL data?','This wipes everything in this browser and reloads demo data. Export a backup first if unsure.',()=>{ DB=seedDB(); saveDB(); render(); toast('Data reset to demo','ok'); },'Reset'); }
+function resetData(){ confirmDialog('Start fresh (clear everything)?','This permanently deletes ALL jobs, customers, quotes, invoices, and expenses — here AND in your Google Sheet. Your services/pricing are kept. Export a backup first if unsure.',()=>{
+  const services = DB.services;            // keep your pricing cheat sheet
+  DB = blankDB();
+  DB.services = services;
+  DB.meta.cleared = true;                   // mark so demo never re-seeds
+  saveDB(); render(); toast('All data cleared','ok');
+},'Clear everything'); }
+function loadDemoData(){ confirmDialog('Load demo data?','This replaces current data with the sample demo records (here and in your Sheet).',()=>{ DB=seedDB(); saveDB(); render(); toast('Demo data loaded','ok'); },'Load demo'); }
 
 /* ---------------------------------------------------------------------
    17. GLOBAL HELPERS + INIT
